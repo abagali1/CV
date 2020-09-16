@@ -17,23 +17,34 @@ typedef struct {
 } Point;
 
 void set_pixel(int c[][Y], int x, int y){
-    std::cout << "s" << std::endl;
-    c[x][y] = 1;
+    c[x][y] = 0;
 }
 
+int draw(int c[][Y], int i, int* j, int e, int dx, int dy, int ddy){
+    int error = e;
+    set_pixel(c, i, *j);
+    if (e >= 0){
+        *j += ddy/dy;
+        error -= dx;
+    }
+    return error + dy;
+}
 
-void line(int c[][Y], Point p1, Point p2){
-    int dx = p1.x - p2.x;
-    int dy = p1.y - p2.y;
+void x_line(int c[][Y], Point p1, Point p2){
+    int dx = std::abs(p2.x - p1.x);
+    int ddy = p2.y - p1.y;
+    int dy = std::abs(ddy);
     int e = dy-dx;
     int j = p1.y;
-    for(int i=p1.x;i<p2.x;i++){
-        set_pixel(c, i,j);
-        if(e>=0){
-            j++;
-            e -= dx;
+
+    if(p2.x >= p1.x) {
+        for(int i=p1.x;i<p2.x;i++){
+            e = draw(c, i, &j, e, dx, dy, ddy);
         }
-        e += dy;
+    }else{
+        for(int i=p1.x;i>p2.x;i--){
+            e = draw(c, i, &j, e, dx, dy, ddy);
+        }
     }
 
 }
@@ -42,11 +53,19 @@ void line(int c[][Y], Point p1, Point p2){
 int main(int argc, char** argv){
     FILE* fout;
     int colors[X][Y];
-
-    srand(1738115);
+    for(int x=0;x<X;x++){
+        for(int y=0;y<Y;y++){
+            colors[x][y] = 1;
+        }
+    }
   
-    line(colors,(Point){.x=800,.y=800}, (Point){.x=0,.y=0});
-  /*  
+    x_line(colors, (Point){.x=800,.y=800}, (Point){.x=0,.y=0});
+
+/*    for(int i=0;i<X;i+=10){
+        x_line(colors,(Point){.x=800,.y=i},(Point){.x=0,.y=0});
+        x_line(colors,(Point){.x=800,.y=i},(Point){.x=0,.y=800});
+    }
+  
     Point vertices[3] = {
         (Point){.x = 100, .y = 100},
         (Point){.x = 200, .y = 200},
