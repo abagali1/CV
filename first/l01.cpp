@@ -1,11 +1,8 @@
 // Anup Bagali
 // Sept. 8, 2020
 // Period 7
-#include <cmath>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
-#include <algorithm>
 
 #define X 800
 #define Y 800
@@ -58,31 +55,18 @@ int main(int argc, char** argv){
             colors[x][y] = 1;
         }
     }
-  
-    x_line(colors, (Point){.x=800,.y=800}, (Point){.x=0,.y=0});
-
-/*    for(int i=0;i<X;i+=10){
-        x_line(colors,(Point){.x=800,.y=i},(Point){.x=0,.y=0});
-        x_line(colors,(Point){.x=800,.y=i},(Point){.x=0,.y=800});
-    }
-  
+    
     Point vertices[3] = {
         (Point){.x = 100, .y = 100},
-        (Point){.x = 200, .y = 200},
-        (Point){.x = 300 % X, .y = 300}
+        (Point){.x = 200, .y = 100},
+        (Point){.x = 150, .y = 150}
     };
 
-    for(int v=0;v<2;v++){
-        Point p1 = vertices[v];
-        Point p2 = vertices[(v+1)%3];
-
-        std::cout << p1.x << " " << p1.y << std::endl;
-        std::cout << p2.x << " " << p2.y << std::endl;
-        line(colors,p1,p2);    
+    for(int i=0;i<3;i++){
+        Point p1 = vertices[i];
+        Point p2 = vertices[(i+1)%3];
+        x_line(colors, p1, p2);
     }
-*/
-
-
 
     fout = fopen("triangles.ppm", "w");
     fprintf(fout, "P3\n");
