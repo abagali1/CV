@@ -37,11 +37,6 @@ class Line {
         b = p1.x - p2.x;
         c = a*(p1.x) + b*(p1.y);
     }
-    Line(Point p1, Point p2, Point p3){
-        a = p3.x - p1.x;
-        b = p3.y - p1.y;
-        c = p2.x*a + p2.y*b;
-    }
     void print(){
         printf("A: %e B: %e, C: %e\n", this->a, this->b, this->c);
     }
@@ -211,12 +206,12 @@ int main(int argc, char** argv){
         (int)( ( (dists[1] * vertices[0].x)+(dists[2]*vertices[1].x)+(dists[0]*vertices[2].x ) ) /(s*2.0)),
         (int)(((dists[1] * vertices[0].y)+(dists[2]*vertices[1].y)+(dists[0]*vertices[2].y))/(s*2.0))
     );
+    Line euler = Line(ncenter, circumcenter);
     
-
+    draw_circle(colors, ncenter, nr);
     draw_circle(colors, incenter, inr);
     draw_circle(colors, circumcenter, outr);    
-    draw_circle(colors, ncenter, nr);
-    
+    draw_line(colors, Point(0, euler.c/euler.b), Point(800, (euler.c-800*euler.a)/euler.b));
     
 
     fout = fopen("triangles.ppm", "w");
