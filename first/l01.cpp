@@ -2,6 +2,7 @@
 // Sept. 8, 2020
 // Period 7
 #include <math.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
@@ -36,6 +37,11 @@ class Line {
         b = p1.x - p2.x;
         c = a*(p1.x) + b*(p1.y);
     }
+    Line(Point p1, Point p2, Point p3){
+        a = p3.x - p1.x;
+        b = p3.y - p1.y;
+        c = p2.x*a + p2.y*b;
+    }
     void print(){
         printf("A: %e B: %e, C: %e\n", this->a, this->b, this->c);
     }
@@ -52,8 +58,16 @@ static inline double distance(Point p1, Point p2){
     return sqrt( pow(p2.x-p1.x, 2) + pow(p2.y-p1.y,2));
 }
 
-double area(Point points[3]){
+static inline double area(Point points[3]){
     return points[0].x * (points[1].y-points[2].y) + points[1].x * (points[2].y-points[0].y) + points[2].x * (points[0].y - points[1].y);
+}
+
+static inline int equilateral(Point points[3]){
+    return (distance(points[0], points[1]) == distance(points[1], points[2])) && (distance(points[1], points[2]) == distance(points[2], points[0])) && (distance(points[2],points[0]) == distance(points[0],points[1]));
+}
+
+static inline Point midpoint(Point p1, Point p2){
+    return Point((p1.x+p2.x)/2, (p1.y+p2.y)/2);
 }
 
 
@@ -144,14 +158,11 @@ Point intersection(Line l1, Line l2){
 }
 
 Line perpendicular_bisector(Line l, Point p1, Point p2){
-    Point mid = Point((p1.x+p2.x)/2, (p1.y+p2.y)/2);
+    Point mid = midpoint(p1,p2);
     return Line(-l.b,l.a,-l.b*(mid.x)+l.a*(mid.y));
 }
 
 Point find_circumcenter(Point verts[3]){
-    for(int i=0;i<3;i++){
-        printf("%e %e\n",verts[i].x, verts[i].y);
-    }
     Line l1 = Line(verts[0], verts[1]);
     Line l2 = Line(verts[1], verts[2]);
     
@@ -169,30 +180,42 @@ int main(int argc, char** argv){
             colors[x][y] = 1;
         }
     }
+    
+    srand(time(0));
     Point vertices[3];
     do {
         for(int i = 0;i<3;i++){
             vertices[i] = Point((int)rand() % X, (int)rand() % Y);
         }
-    }while(area(vertices) == 0.0);
+    }while(area(vertices) == 0.0 && equilateral(vertices) == 1);
     
     for(int i=0;i<3;i++){
         Point p1 = vertices[i];
         Point p2 = vertices[(i+1)%3];
+        printf("%e %e\n",p1.x,p1.y);
         draw_line(colors, p1, p2);
     }
     
-    double s, inr, outr;
+    double s, inr, outr, nr;
     double* dists = find_radii(vertices, &s, &inr, &outr);
+    nr = 0.5*outr;
     
+    Point mids[3] = {
+        midpoint(vertices[0], vertices[1]),
+        midpoint(vertices[1], vertices[2]),
+        midpoint(vertices[2], vertices[0])
+    };
+    Point ncenter = find_circumcenter(mids);
+    Point circumcenter = find_circumcenter(vertices);
     Point incenter = Point(
         (int)( ( (dists[1] * vertices[0].x)+(dists[2]*vertices[1].x)+(dists[0]*vertices[2].x ) ) /(s*2.0)),
         (int)(((dists[1] * vertices[0].y)+(dists[2]*vertices[1].y)+(dists[0]*vertices[2].y))/(s*2.0))
     );
-    Point circumcenter = find_circumcenter(vertices);
-    draw_circle(colors, incenter, inr);
-    draw_circle(colors, circumcenter, outr);
     
+
+    draw_circle(colors, incenter, inr);
+    draw_circle(colors, circumcenter, outr);    
+    draw_circle(colors, ncenter, nr);
     
     
 
