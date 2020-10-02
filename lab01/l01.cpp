@@ -53,14 +53,6 @@ static inline double distance(Point p1, Point p2){
     return sqrt( pow(p2.x-p1.x, 2) + pow(p2.y-p1.y,2));
 }
 
-static inline double area(Point points[3]){
-    return points[0].x * (points[1].y-points[2].y) + points[1].x * (points[2].y-points[0].y) + points[2].x * (points[0].y - points[1].y);
-}
-
-static inline int equilateral(Point points[3]){
-    return (distance(points[0], points[1]) == distance(points[1], points[2])) && (distance(points[1], points[2]) == distance(points[2], points[0])) && (distance(points[2],points[0]) == distance(points[0],points[1]));
-}
-
 static inline Point midpoint(Point p1, Point p2){
     return Point((p1.x+p2.x)/2, (p1.y+p2.y)/2);
 }
@@ -178,11 +170,9 @@ int main(int argc, char** argv){
     
     srand(time(0));
     Point vertices[3];
-    do {
-        for(int i = 0;i<3;i++){
-            vertices[i] = Point((int)rand() % X, (int)rand() % Y);
-        }
-    }while(area(vertices) == 0.0 && equilateral(vertices) == 1);
+    for(int i = 0;i<3;i++){
+        vertices[i] = Point((int)rand() % X, (int)rand() % Y);
+    }
     
     for(int i=0;i<3;i++){
         Point p1 = vertices[i];
