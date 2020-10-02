@@ -1,5 +1,5 @@
 // Anup Bagali
-// Sept. 8, 2020
+// Oct. 10, 2020
 // Period 7
 #include <math.h>
 #include <time.h>
@@ -43,7 +43,7 @@ class Line {
 };
 
 static inline void set_pixel(int** c, double x, double y){
-    if(x > X || x < 0 || y > Y || y < 0){
+    if(x >= X || x < 0 || y >= Y || y < 0){
         return;
     }
     c[(int)x][(int)y] = 0;
@@ -187,8 +187,8 @@ int main(int argc, char** argv){
     for(int i=0;i<3;i++){
         Point p1 = vertices[i];
         Point p2 = vertices[(i+1)%3];
-        printf("%e %e\n",p1.x,p1.y);
         draw_line(colors, p1, p2);
+        printf("%e %e\n",p1.x,p1.y);
     }
     
     double s, inr, outr, nr;
@@ -207,11 +207,13 @@ int main(int argc, char** argv){
         (int)(((dists[1] * vertices[0].y)+(dists[2]*vertices[1].y)+(dists[0]*vertices[2].y))/(s*2.0))
     );
     Line euler = Line(ncenter, circumcenter);
+    Point e1 = Point(0, euler.c/euler.b);
+    Point e2 = Point(800, (euler.c-800*euler.a)/euler.b);
     
     draw_circle(colors, ncenter, nr);
     draw_circle(colors, incenter, inr);
     draw_circle(colors, circumcenter, outr);    
-    draw_line(colors, Point(0, euler.c/euler.b), Point(800, (euler.c-800*euler.a)/euler.b));
+    draw_line(colors, e1, e2);
     
 
     fout = fopen("triangles.ppm", "w");
@@ -225,6 +227,7 @@ int main(int argc, char** argv){
         }
     }
     fclose(fout);
+    delete [] colors;
     return 0;
 }
 
