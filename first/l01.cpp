@@ -1,10 +1,10 @@
 // Anup Bagali
 // Sept. 8, 2020
 // Period 7
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
-
 
 #define X 800
 #define Y 800
@@ -12,44 +12,48 @@
 
 class Point {
     public:
-        int x,y;
-    Point(int px, int py){
+        double x,y;
+    Point(){
+        x = 0;
+        y = 0;
+    }
+    Point(double px, double py){
         x = px; 
         y = py;
     }
 };
 
-static inline void set_pixel(int** c, int x, int y){
-    c[x][y] = 0;
+class Line {
+    public:
+        double a, b, c;
+    Line(double a0, double b0, double c0){
+        a = a0;
+        b = b0;
+        c = c0;
+    }
+    Line(Point p1, Point p2){
+        a = p2.y - p1.y;
+        b = p1.x - p2.x;
+        c = a*(p1.x) + b*(p1.y);
+    }
+    void print(){
+        printf("A: %e B: %e, C: %e\n", this->a, this->b, this->c);
+    }
+};
+
+static inline void set_pixel(int** c, double x, double y){
+    if(x > X || x < 0 || y > Y || y < 0){
+        return;
+    }
+    c[(int)x][(int)y] = 0;
 }
 
-
-int draw_x(int** c, int i, int* j, int e, int dx, int dy, int ddy){ // x case helper
-    int error = e;
-    set_pixel(c, i, *j);
-    if (e >= 0){
-        *j += ddy/dy;
-        error -= dx;
-    }
-    return error + dy;
+static inline double distance(Point p1, Point p2){
+    return sqrt( pow(p2.x-p1.x, 2) + pow(p2.y-p1.y,2));
 }
 
-void x_line(int** c, Point p1, Point p2){ // x case old
-    int dx = std::abs(p2.x - p1.x);
-    int ddy = p2.y - p1.y;
-    int dy = std::abs(ddy);
-    int e = dy-dx;
-    int j = p1.y;
-
-    if(p2.x >= p1.x) {
-        for(int i=p1.x;i<p2.x;i++){
-            e = draw_x(c, i, &j, e, dx, dy, ddy);
-        }
-    }else{
-        for(int i=p1.x;i>p2.x;i--){
-            e = draw_x(c, i, &j, e, dx, dy, ddy);
-        }
-    }
+double area(Point points[3]){
+    return points[0].x * (points[1].y-points[2].y) + points[1].x * (points[2].y-points[0].y) + points[2].x * (points[0].y - points[1].y);
 }
 
 
@@ -90,6 +94,71 @@ void draw_line(int** c, Point p1, Point p2){ // all cases
     }
 }
 
+void draw_circle(int** c, Point center, double r){
+    int x = 0;
+    int y = r;
+    int xmax = (int) (r * 0.70710678); 
+    int y2 = y * y;
+    int y2_new = y2;
+    int ty = (2 * y) - 1;
+    for (x = 0; x <= xmax; x++) {
+        if ((y2 - y2_new) >= ty) {
+            y2 -= ty;
+            y -= 1;
+            ty -= 2;
+        }
+        set_pixel (c, center.x+x, center.y+y);
+        set_pixel (c, center.x+x, center.y-y);
+        
+        set_pixel (c, center.x-x, center.y+y);
+        set_pixel (c, center.x-x, center.y-y);
+        
+        set_pixel (c, center.x+y, center.y+x);
+        set_pixel (c, center.x+y, center.y-x);
+        
+        set_pixel (c, center.x-y, center.y+x);
+        set_pixel (c, center.x-y, center.y-x);
+        
+        y2_new -= (2 * x) - 3;
+    }
+}
+
+double* find_radii(Point vertices[3], double* s, double* r, double* R){
+    double sum = 0.0;
+    static double ds[3];
+    double d;
+    for(int i=0;i<3;i++){
+        d = distance(vertices[i], vertices[(i+1)%3]);
+        sum += d;
+        ds[i] = d;
+    }
+    *s = sum*0.5;
+    *r = sqrt((((*s)-ds[0])*((*s)-ds[1])*((*s)-ds[2]))/(*s));
+    *R = (ds[0]*ds[1]*ds[2])/(4*(*r)*(*s));
+    return ds;
+}
+
+Point intersection(Line l1, Line l2){
+    double det = l1.a*l2.b - l2.a*l1.b;
+    return Point((l2.b*l1.c - l1.b*l2.c)/det, (l1.a*l2.c - l2.a*l1.c)/det);
+}
+
+Line perpendicular_bisector(Line l, Point p1, Point p2){
+    Point mid = Point((p1.x+p2.x)/2, (p1.y+p2.y)/2);
+    return Line(-l.b,l.a,-l.b*(mid.x)+l.a*(mid.y));
+}
+
+Point find_circumcenter(Point verts[3]){
+    for(int i=0;i<3;i++){
+        printf("%e %e\n",verts[i].x, verts[i].y);
+    }
+    Line l1 = Line(verts[0], verts[1]);
+    Line l2 = Line(verts[1], verts[2]);
+    
+    Line p1 = perpendicular_bisector(l1, verts[0], verts[1]);
+    Line p2 = perpendicular_bisector(l2, verts[1], verts[2]);
+    return intersection(p1,p2);
+}
 
 int main(int argc, char** argv){
     FILE* fout;
@@ -100,18 +169,32 @@ int main(int argc, char** argv){
             colors[x][y] = 1;
         }
     }
+    Point vertices[3];
+    do {
+        for(int i = 0;i<3;i++){
+            vertices[i] = Point((int)rand() % X, (int)rand() % Y);
+        }
+    }while(area(vertices) == 0.0);
     
-    Point vertices[3] = {
-        Point(rand() % X, rand() % Y),
-        Point(rand() % X, rand() % Y),
-        Point(rand() % X, rand() % Y)
-    };
-
     for(int i=0;i<3;i++){
         Point p1 = vertices[i];
         Point p2 = vertices[(i+1)%3];
         draw_line(colors, p1, p2);
     }
+    
+    double s, inr, outr;
+    double* dists = find_radii(vertices, &s, &inr, &outr);
+    
+    Point incenter = Point(
+        (int)( ( (dists[1] * vertices[0].x)+(dists[2]*vertices[1].x)+(dists[0]*vertices[2].x ) ) /(s*2.0)),
+        (int)(((dists[1] * vertices[0].y)+(dists[2]*vertices[1].y)+(dists[0]*vertices[2].y))/(s*2.0))
+    );
+    Point circumcenter = find_circumcenter(vertices);
+    draw_circle(colors, incenter, inr);
+    draw_circle(colors, circumcenter, outr);
+    
+    
+    
 
     fout = fopen("triangles.ppm", "w");
     fprintf(fout, "P3\n%d %d\n1\n", X, Y);
