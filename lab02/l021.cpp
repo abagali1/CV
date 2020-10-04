@@ -39,10 +39,8 @@ double area(int x1, int y1, int x2, int y2, int x3, int y3)
    return abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0); 
 } 
 
-int main(int argc, char** argv){
-    FILE* fout;
-    srand(time(0));
-    Point vertices[4];
+Point* part1(){
+    static Point vertices[4];
     for(int i=0;i<3;i++){
         vertices[i] = Point(rand()/(double)RAND_MAX, rand()/(double)RAND_MAX);
     }
@@ -51,11 +49,19 @@ int main(int argc, char** argv){
         vertices[3] = Point(rand()/(double)RAND_MAX, rand()/(double)RAND_MAX);
     }while(in_triangle(vertices) == true);
     
-    fout = fopen("points.txt", "w");
-    for(int i =0;i<3;i++){
+    return vertices;
+}
+
+int main(int argc, char* argv[]){
+    FILE* fout;
+    srand(time(0));
+    Point* vertices = part1();
+    
+    fout = fopen("points.txt","w");
+    for(int i=0;i<3;i++){
         fprintf(fout, "(%lf, %lf) , ", vertices[i].x, vertices[i].y);
     }
-    fprintf(fout, "(%lf, %lf)\n", vertices[3].x, vertices[3].y);
+    fprintf(fout, "(%lf, %lf)", vertices[3].x, vertices[3].y);
     fclose(fout);
     return 0;
 }
