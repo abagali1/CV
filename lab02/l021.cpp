@@ -11,26 +11,26 @@
 
 class Point {
     public:
-        double x,y;
+        float x,y;
     Point(){
         x = 0;
         y = 0;
     }
-    Point(double px, double py){
+    Point(float px, float py){
         x = px; 
         y = py;
     }
 };
 
-double area(Point p1, Point p2, Point p3) 
+float area(Point p1, Point p2, Point p3) 
 { 
    return std::abs((p1.x*(p2.y-p3.y) + p2.x*(p3.y-p1.y)+ p3.x*(p1.y-p2.y))/2.0); 
 } 
 
 
 bool in_triangle(Point verts[4]){
-    double A = area(verts[0], verts[1], verts[2]);
-    double s = area(verts[0], verts[1], verts[3]) + area(verts[0], verts[3], verts[2]) + area(verts[3], verts[1], verts[2]);
+    float A = area(verts[0], verts[1], verts[2]);
+    float s = area(verts[0], verts[1], verts[3]) + area(verts[0], verts[3], verts[2]) + area(verts[3], verts[1], verts[2]);
     return A-e <= s && A+e >= s;
 }
 
@@ -44,18 +44,18 @@ int main(int argc, char** argv){
     srand(time(0));
     Point vertices[4];
     for(int i=0;i<3;i++){
-        vertices[i] = Point(rand()/(double)RAND_MAX, rand()/(double)RAND_MAX);
+        vertices[i] = Point(rand()/(float)RAND_MAX, rand()/(float)RAND_MAX);
     }
     
     do{
-        vertices[3] = Point(rand()/(double)RAND_MAX, rand()/(double)RAND_MAX);
+        vertices[3] = Point(rand()/(float)RAND_MAX, rand()/(float)RAND_MAX);
     }while(in_triangle(vertices) == true);
     
     fout = fopen("points.txt", "w");
     for(int i =0;i<3;i++){
-        fprintf(fout, "(%e %e) , ", vertices[i].x, vertices[i].y);
+        fprintf(fout, "(%lf, %lf) , ", vertices[i].x, vertices[i].y);
     }
-    fprintf(fout, "(%e, %e)\n", vertices[3].x, vertices[3].y);
+    fprintf(fout, "(%lf, %lf)\n", vertices[3].x, vertices[3].y);
     fclose(fout);
     return 0;
 }
