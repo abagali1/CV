@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <iostream>
 #include <fstream>
 #include <cfloat>
 
@@ -157,12 +158,25 @@ bool in_triangle(Point verts[4]){
 
 void parse_file(Point* points){
     ifstream fin("points.txt");
-    string line;
+    string line, buf;
     getline(fin, line);
-    points[0] = Point(stod(line.substr(1,20), NULL), stod(line.substr(21,40),NULL));
-    points[1] = Point(stod(line.substr(45,64), NULL), stod(line.substr(65,84), NULL));
-    points[2] = Point(stod(line.substr(89,108), NULL), stod(line.substr(109,128), NULL));
-    points[3] = Point(stod(line.substr(133, 152), NULL), stod(line.substr(153, 172), NULL));
+    double temp[8];
+    int i = 0;
+    while(i < 8){
+        for(const char &c: line){
+            if(c == '.' || isdigit(c)){
+                buf += c;
+            }
+            if(buf.length() == 19){
+                temp[i] = stod(buf, NULL);
+                buf = "";
+                i++;
+            }
+        }
+    }
+    for(int j=0;j<4;j++){
+        points[j] = Point(temp[j*2], temp[j*2+1]);
+    }
 }
 
 void find_square(Point p1, Point p2, Point p3, Point p4, Point* output){
