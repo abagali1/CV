@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string>
 #include <fstream>
-#include <iostream>
 #include <cfloat>
 
 #define X 800
