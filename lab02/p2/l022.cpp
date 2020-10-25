@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string>
 #include <fstream>
+#include <iostream>
 #include <cfloat>
 
 #define X 800
@@ -159,22 +160,14 @@ void parse_file(Point* points){
     ifstream fin("points.txt");
     string line, buf;
     getline(fin, line);
-    double temp[8];
-    int i = 0;
-    while(i < 8){
-        for(const char &c: line){
-            if(c == '.' || isdigit(c)){
-                buf += c;
-            }
-            if(buf.length() == 19){
-                temp[i] = stod(buf, NULL);
-                buf = "";
-                i++;
-            }
+    for(int i=0;i<4;i++){
+        int lp = line.find("(");
+        int c = line.find(",");
+        int rp = line.find(")");
+        points[i] = Point(stod(line.substr(lp+1,c-lp-1), NULL), stod(line.substr(c+1,rp-c-1), NULL));
+        if(i < 3){
+            line = line.substr(rp+3, line.length()-rp-3);
         }
-    }
-    for(int j=0;j<4;j++){
-        points[j] = Point(temp[j*2], temp[j*2+1]);
     }
 }
 
