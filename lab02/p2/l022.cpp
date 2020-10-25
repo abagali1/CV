@@ -1,5 +1,5 @@
 // Anup Bagali
-// Oct. 10, 2020
+// Oct. 25, 2020
 // Period 7
 #include <math.h>
 #include <time.h>
