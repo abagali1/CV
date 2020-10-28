@@ -106,7 +106,7 @@ void draw_circle(Color** c, Point center, double r, Color color){
     }
 }
 
-list<Point> part1(list<Point> points){
+list<Point> closest_point_n2(list<Point> points){
     list<Point> min;
     double min_distance = DBL_MAX;
     for(list<Point>::iterator i = points.begin(); i != points.end(); ++i){
@@ -125,7 +125,7 @@ list<Point> part1(list<Point> points){
     return min;
 }
 
-int main(){
+void part1(){
     srand(time(0));
     FILE* fout;
     list<Point> points;
@@ -145,7 +145,7 @@ int main(){
         fprintf(fout, "%0.25lf %0.25lf\n", p.x, p.y);
     }
 
-    list<Point> min = part1(points);
+    list<Point> min = closest_point_n2(points);
     for(list<Point>::iterator i = min.begin(); i != min.end(); ++i){
         Point p = *i;
         set_pixel(colors, p.x*X, p.y*Y, RED);
@@ -161,4 +161,8 @@ int main(){
     }
     fclose(fout);
     delete[] colors;
+}
+
+int main(){
+    part1();
 }
