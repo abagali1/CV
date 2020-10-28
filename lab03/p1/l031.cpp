@@ -153,7 +153,7 @@ void part1(){
     draw_circle(colors, p2, 2.0, RED);
     
 
-    fout = fopen("output.ppm", "w");
+    fout = fopen("points.ppm", "w");
     fprintf(fout, "P3\n%d %d\n255\n", X, Y);
     for(int i=0;i<X;i++){
         for(int j=0;j<Y;j++){
