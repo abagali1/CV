@@ -26,6 +26,9 @@ class Color{
             this->g=g;
             this->b=b;
         }
+        void print(){
+            printf("R: %d, G: %d, B: %d\n", this->r, this->g, this->b);
+        }
 };
 
 const Color BLACK(0, 0, 0);
