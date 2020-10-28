@@ -59,25 +59,6 @@ class Point {
     }
 };
 
-class Line {
-    public:
-        double a, b, c;
-    Line(double a, double b, double c){
-        this->a = a;
-        this->b = b; 
-        this->c = c;
-    }
-    Line(Point p1, Point p2){
-        this->a = p2.y - p1.y;
-        this->b = p1.x - p2.x;
-        this->c = this->a*(p1.x) + this->b*(p1.y);
-    }
-    void print(){
-        printf("A: %e B: %e, C: %e\n", this->a, this->b, this->c);
-    }
-};
-
-
 static inline void set_pixel(Color** c, double x, double y, Color color){
     if(x >= X || x < 0 || y >= Y || y < 0){
         return;
