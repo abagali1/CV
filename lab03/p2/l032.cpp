@@ -1,16 +1,6 @@
 // Anup Bagali
 // 10/27/2020
 // Period 7
-// #include <list>
-// #include <cmath>
-// #include <ctime>
-// #include <cfloat>
-// #include <string>
-// #include <vector>
-// #include <fstream>
-// #include <iterator>
-// #include <iostream>
-// #include <algorithm>
 #include <bits/stdc++.h>
 
 #define amt 50
@@ -81,8 +71,12 @@ static inline double distance(Point p1, Point p2){
     return sqrt(pow(p2.x-p1.x, 2) + pow(p2.y-p1.y,2));
 }
 
-static inline int compare_point(Point p1, Point p2){
-    return (int)(p1.x < p2.x);
+static inline int compare_x(Point p1, Point p2){
+    return p1.x < p2.x;
+}
+
+static inline int compare_y(Point p1, Point p2){
+    return p1.y < p2.y;
 }
 
 void draw_circle(Color** c, Point center, double r, Color color){
@@ -142,8 +136,25 @@ void closest_point_n2(list<Point> points, Point* p1, Point* p2){
     }
 }
 
+double nlogn2_recur(vector<Point> points, int n){
+    int mid = n/2;
+    Point midp = points[mid];
+
+    double d1 = nlogn2_recur(points, mid);
+    double d2 = nlogn2_recur(vector<Point>(points.begin() + mid, points.end()), n-mid);
+
+    double min = d1 < d2 ? d1 : d2;
+    vector<Point> tmp;
+    for(int i=0;i<n;i++)
+        if(abs(points[i].x - midp.x) < min)
+            tmp.push_back(points[i]);
+
+}
+
 void closest_point_nlogn2(vector<Point> points, Point* p1, Point* p2){
-    sort(points.begin(), points.end(), compare_point);
+    if(points.size() <= 3)
+        return closest_point_n2(list<Point>(points.begin(), points.end()), p1, p2);
+    sort(points.begin(), points.end(), compare_x);
 
 }
 
@@ -169,8 +180,7 @@ time_t part1(){
     fclose(fout);
 
     time_t start_time = time(0);
-    Point p1;
-    Point p2;
+    Point p1, p2;
     closest_point_n2(points, &p1, &p2);
     time_t end_time = time(0);
     
@@ -195,7 +205,9 @@ time_t part1(){
 }
 
 time_t part2(){
-    parse_file();
+    vector<Point> points = parse_file();
+    Point p1, p2;
+    closest_point_nlogn2(points, &p1, &p2);
     return time(0);
 }
 
