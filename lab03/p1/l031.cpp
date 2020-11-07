@@ -13,51 +13,31 @@
 
 using namespace std;
 
+class Point {
+    public:
+        double x, y;
+    Point(): x(0), y(0){};
+    Point(double _x, double _y): x(_x), y(_y){};
+    Point(Point p1, double scalar): x(p1.x*scalar), y(p1.y*scalar){};
+    Point(Point p1, double s_x, double s_y): x(p1.x*s_x), y(p1.y*s_y){};
+    void print(){
+        printf("X: %e. Y: %e\n", this->x, this->y);
+    };
+};
+
 class Color{
     public:
         uchar r, g, b;
-        Color(){
-            this->r=0;
-            this->g=0;
-            this->b=0;
-        };
-        Color(uchar r, uchar g, uchar b){
-            this->r=r;
-            this->g=g;
-            this->b=b;
-        }
+        Color(): r(0), g(0), b(0){};
+        Color(uchar _r, uchar _g, uchar _b): r(_r), g(_g), b(_b){};
         void print(){
             printf("R: %d, G: %d, B: %d\n", this->r, this->g, this->b);
-        }
+        };
 };
 
 const Color BLACK(0, 0, 0);
 const Color WHITE(255, 255, 255);
 const Color RED(255, 0, 0);
-
-class Point {
-    public:
-        double x, y;
-    Point(){
-        this->x = 0;
-        this->y = 0;
-    }
-    Point(double x, double y){
-        this->x = x;
-        this->y = y;
-    }
-    Point(Point p1, double scalar){
-        this->x = p1.x*scalar;
-        this->y = p1.y*scalar;
-    }
-    Point(Point p1, double s_x, double s_y){
-        this->x = p1.x*s_x;
-        this->y = p1.y*s_y;
-    }
-    void print(){
-        printf("X: %e. Y: %e\n", this->x, this->y);
-    }
-};
 
 static inline void set_pixel(Color** c, double x, double y, Color color){
     if(x >= X || x < 0 || y >= Y || y < 0){
