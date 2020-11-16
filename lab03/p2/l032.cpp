@@ -101,10 +101,10 @@ vector<Point> parse_file(){
 }
 
 
-void closest_point_n2(list<Point> points, Point* p1, Point* p2){
+double closest_point_n2(vector<Point> points, Point* p1, Point* p2){
     double min_distance = DBL_MAX;
-    for(list<Point>::iterator i = points.begin(); i != points.end(); ++i){
-        for(list<Point>::iterator j = i; j != points.end(); ++j){
+    for(vector<Point>::iterator i = points.begin(); i != points.end(); ++i){
+        for(vector<Point>::iterator j = i; j != points.end(); ++j){
             if(i != j){
                 double d = distance(*i, *j);
                 if(d < min_distance){
@@ -115,34 +115,57 @@ void closest_point_n2(list<Point> points, Point* p1, Point* p2){
             }
         }
     }
+    return min_distance;
 }
 
-double nlogn2_recur(vector<Point> points, int n){
-    int mid = n/2;
-    Point midp = points[mid];
-
-    double d1 = nlogn2_recur(points, mid);
-    double d2 = nlogn2_recur(vector<Point>(points.begin() + mid, points.end()), n-mid);
-
-    double min = d1 < d2 ? d1 : d2;
-    vector<Point> tmp;
-    for(int i=0;i<n;i++)
-        if(abs(points[i].x - midp.x) < min)
-            tmp.push_back(points[i]);
-
+double strip_closest(vector<Point> strip, double d, Point* p1, Point* p2){
+    double min = d;
+    sort(strip.begin(), strip.end(), compare_y);
+    for(int i=0;i<strip.size();i++){
+        for(int j=i+1; j<strip.size() && strip[j].y-strip[i].y < min; j++){
+            double t_d = distance(strip[i], strip[j]);
+            if(t_d < min){
+                min = t_d;
+                *p1 = strip[i];
+                *p2 = strip[i];
+            }       
+        }
+    }
+    return min;
 }
 
-void closest_point_nlogn2(vector<Point> points, Point* p1, Point* p2){
-    if(points.size() <= 3)
-        return closest_point_n2(list<Point>(points.begin(), points.end()), p1, p2);
-    sort(points.begin(), points.end(), compare_x);
+double nlogn2_recur(vector<Point> points, int s, int e, Point* p1, Point* p2){
+    if(e-s <= 3){
+        return closest_point_n2(vector<Point>(points.begin()+s, points.end()-e), p1, p2);
+    }
 
+    int mid = s + (s+e)/2;
+
+    Point pl1, pl2, pr1, pr2;
+    double d1 = nlogn2_recur(points, s, mid, &pl1, &pl2);
+    double d2 = nlogn2_recur(points, mid, e, &pr1, &pr2);
+
+    double d;
+    if(d1 < d2){
+        d = d1;
+        *p1 = pl1;
+        *p2 = pl2;
+    }else{
+        d = d2;
+        *p1 = pr1;
+        *p2 = pr2;
+    }
+    vector<Point> strip;
+    for(int i=s; i<e; i++)
+        if(abs(points[i].x - points[mid].x) < d)
+            strip.push_back(Point(points[i], 1));
+    return min(d, strip_closest(strip, d, p1, p2));
 }
 
 time_t part1(){
     srand(time(0));
     FILE* fout;
-    list<Point> points;
+    vector<Point> points;
     Color** colors = new Color*[X];
     for(int i=0;i<X;i++){
         colors[i] = new Color[Y];
@@ -188,7 +211,8 @@ time_t part1(){
 time_t part2(){
     vector<Point> points = parse_file();
     Point p1, p2;
-    closest_point_nlogn2(points, &p1, &p2);
+    sort(points.begin(), points.end(), compare_x);
+    double d = nlogn2_recur(points, 0, N, &p1, &p2);
     return time(0);
 }
 
