@@ -4,7 +4,7 @@
 #include <bits/stdc++.h>
 #include <chrono>
 
-#define N 1000
+#define N 100
 #define X 800
 #define Y 800
 #define uchar unsigned char
@@ -109,36 +109,21 @@ vector<Point> parse_file(){
 }
 
 
-double closest_point_n2(vector<Point> points, Point* p1, Point* p2){
-    double min_distance = DBL_MAX;
-    for(vector<Point>::iterator i = points.begin(); i != points.end(); ++i){
-        for(vector<Point>::iterator j = i; j != points.end(); ++j){
-            if(i != j){
-                double d = distance(*i, *j);
-                if(d < min_distance){
-                    min_distance = d;
-                    *p1 = *i;
-                    *p2 = *j;
-                }
-            }
-        }
-    }
-    return min_distance;
-}
-
 dp strip_closest(vector<Point> strip, double d, Point p1, Point p2){
     double min = d;
     Point t1;
     Point t2;
     sort(strip.begin(), strip.end(), compare_y);
-    for(int i=0;i<strip.size();i++){
-        for(int j=i+1; j<strip.size() && abs(strip[j].y-strip[i].y) < min; j++){
-            double t_d = distance(strip[i], strip[j]);
-            if(t_d < min){
-                min = t_d;
-                t1 = Point(strip[i].x, strip[i].y);
-                t2 = Point(strip[j].x, strip[j].y);
-            }       
+    for(vector<Point>::iterator i=strip.begin();i<strip.end();++i){
+        for(vector<Point>::iterator j=i; j<strip.end() && abs(j->y - i->y) < min; ++j){
+            if(i != j){
+                double t_d = distance(*i, *j);
+                if(t_d < min){
+                    min = t_d;
+                    t1 = Point(i->x, i->y);
+                    t2 = Point(j->x, j->y);
+                }
+            }
         }
     }
     return (dp){.d =min, .p1=t1, p2=t2};
@@ -148,13 +133,15 @@ dp strip_closest(vector<Point> strip, double d, Point p1, Point p2){
 dp brute_force(vector<Point> points, int s, int e){
     Point p1, p2;
     double min = DBL_MAX;
-    for(int i=s;i<e;i++){
-        for(int j=i+1;j<e;j++){
-            double d = distance(points[i], points[j]);
-            if(d < min){
-                min = d;
-                p1 = points[i];
-                p2 = points[j];
+    for(vector<Point>::iterator i=points.begin()+s;i<points.begin()+e+1;++i){
+        for(vector<Point>::iterator j=i;j<points.begin()+e+1;j++){
+            if(i != j){
+                double d = distance(*i, *j);
+                if(d < min){
+                    min = d;
+                    p1 = *i;
+                    p2 = *j;
+                }
             }
         }
     }
@@ -190,7 +177,7 @@ dp nlogn2_recur(vector<Point> points, int s, int e){
     return ss.d < d ? ss : (dp){.d=d, .p1=p1, .p2=p2};
 }
 
-microseconds part1(){
+void part1(){
     srand(time(0));
     FILE* fout;
     vector<Point> points;
@@ -211,15 +198,16 @@ microseconds part1(){
     }
     fclose(fout);
 
+    dp d;
     auto start_time = high_resolution_clock::now();
-    Point p1, p2;
-    closest_point_n2(points, &p1, &p2);
-    p1.print();
-    p2.print();
+    {
+        d = brute_force(points, 0, N);
+    }
     auto end_time = high_resolution_clock::now();
+    long int duration = duration_cast<microseconds>(end_time - start_time).count();
     
-    p1 = Point(p1, X);
-    p2 = Point(p2, X);
+    Point p1 = Point(d.p1, X);
+    Point p2 = Point(d.p2, X);
     set_pixel(colors, p1, RED);
     draw_circle(colors, p1, 2.0, RED);
 
@@ -234,22 +222,36 @@ microseconds part1(){
         }
     }
     fclose(fout);
+    remove("results.txt");
+    fout = fopen("results.txt", "a");
+    fprintf(fout, "Brute Force: (%0.25lf, %0.25lf) (%0.25lf, %0.25lf)", d.p1.x, d.p1.y, d.p2.x, d.p2.y);
+    fprintf(fout, "Distance: %0.25lf Time: %ld microseconds\n", d.d, duration);
+    fclose(fout);
+
     delete[] colors;
-    return duration_cast<microseconds>(end_time - start_time);
 }
 
-microseconds part2(){
+ void part2(){
+    dp d;
+    FILE* fout;
     vector<Point> points = parse_file();
     auto start_time = high_resolution_clock::now();
-    Point p1, p2;
-    sort(points.begin(), points.end(), compare_x);
-    dp d = nlogn2_recur(points, 0, N);
+    {
+        sort(points.begin(), points.end(), compare_x);
+        d = nlogn2_recur(points, 0, N);
+    }
     auto end_time = high_resolution_clock::now();
-    return duration_cast<microseconds>(end_time - start_time);
+    long int duration = duration_cast<microseconds>(end_time - start_time).count();
+    
+    fout = fopen("results.txt", "a");
+    fprintf(fout, "Recursive: (%0.25lf, %0.25lf) (%0.25lf, %0.25lf)", d.p1.x, d.p1.y, d.p2.x, d.p2.y);
+    fprintf(fout, "Distance: %0.25lf Time: %ld microseconds\n", d.d, duration);
+    fclose(fout);
+
 }
 
 int main(){
-    microseconds p1_t = part1();
-    microseconds p2_t = part2();
+    part1();
+    part2();
     return 0;
 }
