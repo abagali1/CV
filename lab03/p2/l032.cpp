@@ -22,6 +22,12 @@ class Point {
     };
 };
 
+typedef struct {
+    double d;
+    Point p1;
+    Point p2;
+} dp;
+
 class Color{
     public:
         uchar r, g, b;
@@ -118,7 +124,7 @@ double closest_point_n2(vector<Point> points, Point* p1, Point* p2){
     return min_distance;
 }
 
-tuple<double, Point, Point> strip_closest(vector<Point> strip, double d, Point p1, Point p2){
+dp strip_closest(vector<Point> strip, double d, Point p1, Point p2){
     double min = d;
     Point t1 = p1;
     Point t2 = p2;
@@ -133,42 +139,53 @@ tuple<double, Point, Point> strip_closest(vector<Point> strip, double d, Point p
             }       
         }
     }
-    return make_tuple(min, t1, t2);
+    return (dp){.d =min, .p1=t1, p2=t2};
+    
 }
 
-tuple<double, Point, Point> brute_force(vector<Point> points){
+dp brute_force(vector<Point> points, int s, int e){
     Point p1, p2;
-    double d = closest_point_n2(points, &p1, &p2);
-    return make_tuple(d, p1, p2);
+    double min = DBL_MAX;
+    for(int i=s;i<e;i++){
+        for(int j=s+1;j<e;j++){
+            double d = distance(points[i], points[j]);
+            if(d < min){
+                min = d;
+                p1 = points[i];
+                p2 = points[j];
+            }
+        }
+    }
+    return (dp){.d=min, .p1=p1, .p2=p2};
 }
 
-tuple<double, Point, Point> nlogn2_recur(vector<Point> points, int s, int e){
+dp nlogn2_recur(vector<Point> points, int s, int e){
     if((e-s) <= 3){
-        return brute_force(vector<Point>(points.begin()+s, points.end()-e));
+        return brute_force(points, s, e);
     }
 
     int mid = s + (e-s)/2;
 
-    tuple<double, Point, Point> d1 = nlogn2_recur(points, s, mid);
-    tuple<double, Point, Point> d2 = nlogn2_recur(points, mid, e);
+    dp d1 = nlogn2_recur(points, s, mid);
+    dp d2 = nlogn2_recur(points, mid, e);
 
     double d;
     Point p1, p2;
-    if(get<0>(d1) < get<0>(d2)){
-        d = get<0>(d1);
-        p1 = get<1>(d1);
-        p2 = get<2>(d1);
+    if(d1.d < d2.d){
+        d = d1.d;
+        p1 = d1.p1;
+        p2 = d1.p2;
     }else{
-        d = get<0>(d2);
-        p1 = get<1>(d2);
-        p2 = get<2>(d2);
+        d = d2.d;
+        p1 = d2.p1;
+        p2 = d2.p2;
     }
     vector<Point> strip;
     for(int i=s; i<e; i++)
         if(abs(points[i].x - points[mid].x) < d)
             strip.push_back(Point(points[i], 1));
-    tuple<double, Point, Point> ss = strip_closest(strip, d, p1, p2);
-    return get<0>(ss) < d ? ss : make_tuple(d, p1, p2);
+    dp ss = strip_closest(strip, d, p1, p2);
+    return ss.d < d ? ss : (dp){.d=d, .p1=p1, .p2=p2};
 }
 
 time_t part1(){
@@ -195,6 +212,8 @@ time_t part1(){
     time_t start_time = time(0);
     Point p1, p2;
     closest_point_n2(points, &p1, &p2);
+    p1.print();
+    p2.print();
     time_t end_time = time(0);
     
     p1 = Point(p1, X);
@@ -221,7 +240,10 @@ time_t part2(){
     vector<Point> points = parse_file();
     Point p1, p2;
     sort(points.begin(), points.end(), compare_x);
-    tuple<double, Point, Point> d = nlogn2_recur(points, 0, N);
+    dp d = nlogn2_recur(points, 0, N);
+    printf("fin\n");
+    d.p1.print();
+    d.p2.print();
     return time(0);
 }
 
