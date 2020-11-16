@@ -4,7 +4,7 @@
 #include <bits/stdc++.h>
 #include <chrono>
 
-#define N 100
+#define N 1000
 #define X 800
 #define Y 800
 #define uchar unsigned char
