@@ -2,13 +2,15 @@
 // 10/27/2020
 // Period 7
 #include <bits/stdc++.h>
+#include <chrono>
 
-#define N 50
+#define N 1000
 #define X 800
 #define Y 800
 #define uchar unsigned char
 
 using namespace std;
+using namespace std::chrono;
 
 class Point {
     public:
@@ -126,16 +128,16 @@ double closest_point_n2(vector<Point> points, Point* p1, Point* p2){
 
 dp strip_closest(vector<Point> strip, double d, Point p1, Point p2){
     double min = d;
-    Point t1 = p1;
-    Point t2 = p2;
+    Point t1;
+    Point t2;
     sort(strip.begin(), strip.end(), compare_y);
     for(int i=0;i<strip.size();i++){
-        for(int j=i+1; j<strip.size() && strip[j].y-strip[i].y < min; j++){
+        for(int j=i+1; j<strip.size() && abs(strip[j].y-strip[i].y) < min; j++){
             double t_d = distance(strip[i], strip[j]);
             if(t_d < min){
                 min = t_d;
-                t1 = strip[i];
-                t2 = strip[j];
+                t1 = Point(strip[i].x, strip[i].y);
+                t2 = Point(strip[j].x, strip[j].y);
             }       
         }
     }
@@ -147,7 +149,7 @@ dp brute_force(vector<Point> points, int s, int e){
     Point p1, p2;
     double min = DBL_MAX;
     for(int i=s;i<e;i++){
-        for(int j=s+1;j<e;j++){
+        for(int j=i+1;j<e;j++){
             double d = distance(points[i], points[j]);
             if(d < min){
                 min = d;
@@ -188,7 +190,7 @@ dp nlogn2_recur(vector<Point> points, int s, int e){
     return ss.d < d ? ss : (dp){.d=d, .p1=p1, .p2=p2};
 }
 
-time_t part1(){
+microseconds part1(){
     srand(time(0));
     FILE* fout;
     vector<Point> points;
@@ -209,12 +211,12 @@ time_t part1(){
     }
     fclose(fout);
 
-    time_t start_time = time(0);
+    auto start_time = high_resolution_clock::now();
     Point p1, p2;
     closest_point_n2(points, &p1, &p2);
     p1.print();
     p2.print();
-    time_t end_time = time(0);
+    auto end_time = high_resolution_clock::now();
     
     p1 = Point(p1, X);
     p2 = Point(p2, X);
@@ -233,22 +235,21 @@ time_t part1(){
     }
     fclose(fout);
     delete[] colors;
-    return end_time - start_time;
+    return duration_cast<microseconds>(end_time - start_time);
 }
 
-time_t part2(){
+microseconds part2(){
     vector<Point> points = parse_file();
+    auto start_time = high_resolution_clock::now();
     Point p1, p2;
     sort(points.begin(), points.end(), compare_x);
     dp d = nlogn2_recur(points, 0, N);
-    printf("fin\n");
-    d.p1.print();
-    d.p2.print();
-    return time(0);
+    auto end_time = high_resolution_clock::now();
+    return duration_cast<microseconds>(end_time - start_time);
 }
 
 int main(){
-    time_t p1_t = part1();
-    time_t p2_t = part2();
+    microseconds p1_t = part1();
+    microseconds p2_t = part2();
     return 0;
 }
