@@ -159,8 +159,8 @@ dp strip_closest(vector<Point> strip, double d, Point p1, Point p2, int lim = -1
                 double t_d = distance(*i, *j);
                 if(t_d < min){
                     min = t_d;
-                    t1 = Point(i->x, i->y);
-                    t2 = Point(j->x, j->y);
+                    t1 = *i;
+                    t2 = *j;
                 }
                 it++;
                 if(lim != -1 && it >= lim)
