@@ -239,6 +239,7 @@ void part1(vector<Point> points){
     }
     auto end_time = high_resolution_clock::now();
     li duration = duration_cast<microseconds>(end_time - start_time).count();
+    printf("%ld\n",duration);
     append_file("Initial Recursive", d, duration);    
 }
 
@@ -251,6 +252,7 @@ void part3(vector<Point> points){
     }
     auto end_time = high_resolution_clock::now();
     li duration = duration_cast<microseconds>(end_time - start_time).count();
+    printf("%ld\n", duration);
     append_file("Full Recursive", d, duration);
     create_ppm(points, d);
 }
