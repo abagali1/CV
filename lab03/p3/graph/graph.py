@@ -18,6 +18,7 @@ for i in N:
         R_avg.append(int(out[1]))
     B.append(B_avg)
     R.append(R_avg)
+    print(i)
 
 plt.plot(N, [sum(x)/IT for x in B], 'r')
 plt.plot(N, [sum(x)/IT for x in R], 'b')
