@@ -5,12 +5,13 @@ import matplotlib.patches as mpatches
 import subprocess
 
 IT = 20
-N = [*range(int(1e4), int(1e6),100)] # number of points (x axis)
+N = [*range(0, int(1e5),1000)] # number of points (x axis)
 B = [] # time for brute force 
 R = [] # time for recursive 
 
 for i in N:
     subprocess.check_output(f"./a.out {i}", shell=True)
+    print('made points')
     B_avg, R_avg = [], []
     for j in range(IT):
         out = subprocess.check_output(f"../a.out", shell=True).decode("latin-1").splitlines()
