@@ -139,60 +139,55 @@ void create_ppm(vector<Point> points, dp d){
 
 void append_file(string n, dp d, li duration){
     FILE* fout = fopen("results.txt", "a");
-    fprintf(fout, "%s: (%0.25lf, %0.25lf) (%0.25lf, %0.25lf) ", n.c_str(), d.p1.x, d.p1.y, d.p2.x, d.p2.y);
-    fprintf(fout, "Distance: %0.25lf Time: %ld microseconds\n", d.d, duration);
+    fprintf(fout, "%s (%0.17lf, %0.17lf) (%0.17lf, %0.17lf) ", n.c_str(), d.p1.x, d.p1.y, d.p2.x, d.p2.y);
+    fprintf(fout, "Distance: %0.17e Time: %ld microseconds\n", d.d, duration);
     fclose(fout);
 }
 
-dp strip_closest(vector<Point> strip, double d, Point p1, Point p2, int lim = -1){
-    double min = d;
-    Point t1;
-    Point t2;
-    int it;
-    if(lim != -1){
+dp strip_closest(vector<Point> strip, double m_d, Point p1, Point p2, int lim = -1){
+    double min = m_d;
+    double d;
+    Point t1 = p1;
+    Point t2 = p2;
+    int e = strip.size();
+    if(lim > 0){
         sort(strip.begin(), strip.end(), compare_y);
-        it = 0;
+        e = lim;
     }
-    for(vector<Point>::iterator i=strip.begin();i<strip.end();++i){
-        for(vector<Point>::iterator j=i; j<strip.end() && abs(j->y - i->y) < min; ++j){
-            if(i != j){
-                double t_d = distance(*i, *j);
-                if(t_d < min){
-                    min = t_d;
-                    t1 = *i;
-                    t2 = *j;
-                }
-                it++;
-                if(lim != -1 && it >= lim)
-                    return (dp){.d=min, .p1=t1, .p2=t2};
+    for(int i=0;i<strip.size();i++){
+        for(int j=i+1;j<e;j++){
+            d = distance(strip[i], strip[j]);
+            if(d < min){
+                min = d;
+                t1 = strip[i];
+                t2 = strip[j];
             }
         }
     }
-    return (dp){.d =min, .p1=t1, .p2=t2};
+    return (dp){.d=min, .p1=t1, .p2=t2};
     
 }
 
 dp brute_force(vector<Point> points, int s, int e){
     Point p1, p2;
     double min = DBL_MAX;
-    for(vector<Point>::iterator i=points.begin()+s;i<points.begin()+e+1;++i){
-        for(vector<Point>::iterator j=i;j<points.begin()+e+1;j++){
-            if(i != j){
-                double d = distance(*i, *j);
-                if(d < min){
-                    min = d;
-                    p1 = *i;
-                    p2 = *j;
-                }
+    double d;
+    for(int i=s;i<e;i++){
+        for(int j=i+1;j<e;j++){
+            d = distance(points[i], points[j]);
+            if(d < min){
+                min = d;
+                p1 = points[i];
+                p2 = points[j];
             }
         }
     }
     return (dp){.d=min, .p1=p1, .p2=p2};
 }
 
-dp nlogn2_recur(vector<Point> points, int s, int e, int lim = -1){
+dp nlogn2_recur(vector<Point>* points, int s, int e, int lim = -1){
     if((e-s) <= 3){
-        return brute_force(points, s, e);
+        return brute_force(*points, s, e);
     }
 
     int mid = s + (e-s)/2;
@@ -213,10 +208,9 @@ dp nlogn2_recur(vector<Point> points, int s, int e, int lim = -1){
     }
     vector<Point> strip;
     for(int i=s; i<e; i++)
-        if(abs(points[i].x - points[mid].x) < d)
-            strip.push_back(Point(points[i], 1));
-    dp ss = strip_closest(strip, d, p1, p2, lim);
-    return ss.d < d ? ss : (dp){.d=d, .p1=p1, .p2=p2};
+        if(abs((*points)[i].x - (*points)[mid].x) < d)
+            strip.push_back(Point((*points)[i], 1));
+    return strip_closest(strip, d, p1, p2, lim);
 }
 
 void part1(vector<Point> points){
@@ -235,7 +229,7 @@ void part1(vector<Point> points){
     auto start_time = high_resolution_clock::now();
     {
         sort(points.begin(), points.end(), compare_x);
-        d = nlogn2_recur(points, 0, points.size());
+        d = nlogn2_recur(&points, 0, points.size());
     }
     auto end_time = high_resolution_clock::now();
     li duration = duration_cast<microseconds>(end_time - start_time).count();
@@ -248,7 +242,7 @@ void part3(vector<Point> points){
     auto start_time = high_resolution_clock::now();
     {
         sort(points.begin(), points.end(), compare_x);
-        d = nlogn2_recur(points, 0, points.size(), 15);
+        d = nlogn2_recur(&points, 0, points.size(), 15);
     }
     auto end_time = high_resolution_clock::now();
     li duration = duration_cast<microseconds>(end_time - start_time).count();

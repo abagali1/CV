@@ -1,6 +1,6 @@
 *.out
 *.ppm
-points.txt
+points*.txt
 test.cpp
 output*
 .ipynb_checkpoints/
