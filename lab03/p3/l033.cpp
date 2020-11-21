@@ -168,17 +168,17 @@ dp strip_closest(vector<Point> strip, double m_d, Point p1, Point p2, int lim = 
     
 }
 
-dp brute_force(vector<Point> points, int s, int e){
+dp brute_force(vector<Point>* points, int s, int e){
     Point p1, p2;
     double min = DBL_MAX;
     double d;
     for(int i=s;i<e;i++){
         for(int j=i+1;j<e;j++){
-            d = distance(points[i], points[j]);
+            d = distance((*points)[i], (*points)[j]);
             if(d < min){
                 min = d;
-                p1 = points[i];
-                p2 = points[j];
+                p1 = (*points)[i];
+                p2 = (*points)[j];
             }
         }
     }
@@ -187,7 +187,7 @@ dp brute_force(vector<Point> points, int s, int e){
 
 dp nlogn2_recur(vector<Point>* points, int s, int e, int lim = -1){
     if((e-s) <= 3){
-        return brute_force(*points, s, e);
+        return brute_force(points, s, e);
     }
 
     int mid = s + (e-s)/2;
@@ -217,7 +217,7 @@ void part1(vector<Point> points){
     dp d;
     auto start_time = high_resolution_clock::now();
     {
-        d = brute_force(points, 0, points.size());
+        d = brute_force(&points, 0, points.size());
     }
     auto end_time = high_resolution_clock::now();
     li duration = duration_cast<microseconds>(end_time - start_time).count();
@@ -248,7 +248,7 @@ void part3(vector<Point> points){
     li duration = duration_cast<microseconds>(end_time - start_time).count();
     printf("%ld\n", duration);
     append_file("Full Recursive", d, duration);
-    create_ppm(points, d);
+    // create_ppm(points, d);
 }
 
 int main(){
