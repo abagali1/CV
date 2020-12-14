@@ -153,18 +153,6 @@ dp nlogn2_recur(vector<Point>* points, int s, int e, int lim = -1){
     return strip_closest(strip, d, p1, p2, lim);
 }
 
-void part3(vector<Point>* points, const int N){
-    dp d;
-    auto start_time = high_resolution_clock::now();
-    {
-        sort(points->begin(), points->end(), compare_x);
-        d = nlogn2_recur(points, 0, N, 15);
-    }
-    auto end_time = high_resolution_clock::now();
-    li duration = duration_cast<microseconds>(end_time - start_time).count();
-    append_file("Full Recursive", d, duration);
-}
-
 void shuffle(vector<Point>* points, int n){
     for (int i = n - 1; i > 0; i--){  
         int j = rand() % (i + 1); 
@@ -213,13 +201,24 @@ dp closest_randomized(vector<Point>* points, const int N){
                 }
             }
         }
-        else
-        {
+        else{
             dict[t1] = points->at(i);
         }
-        
     }
     return (dp){.d=md, .p1=p1, .p2=p2};
+}
+
+void part3(vector<Point>* points, const int N){
+    dp d;
+    auto start_time = high_resolution_clock::now();
+    {
+        sort(points->begin(), points->end(), compare_x);
+        d = nlogn2_recur(points, 0, N, 15);
+    }
+    auto end_time = high_resolution_clock::now();
+    li duration = duration_cast<microseconds>(end_time - start_time).count();
+    printf("%ld\n", duration);
+    append_file("Full Recursive", d, duration);
 }
 
 void part4(vector<Point>* points, const int N){
@@ -232,12 +231,12 @@ void part4(vector<Point>* points, const int N){
     }
     auto end_time = high_resolution_clock::now();
     li duration = duration_cast<microseconds>(end_time - start_time).count();
+    printf("%ld\n", duration);
     append_file("Randomized", d, duration);
 }
 
 int main(int argc, char* argv[]) {
-    // srand(time(0));
-    srand(1738114);
+    srand(time(0));
     vector<Point> p3, p4;
     const int N = read_file(&p3);
     p4 = p3;
@@ -245,7 +244,7 @@ int main(int argc, char* argv[]) {
     part3(&p3, N);
     part4(&p4, N);
 
-    cout << ifstream(OUTFILE).rdbuf();
+    // cout << ifstream(OUTFILE).rdbuf();
 
     return 0;
 }
