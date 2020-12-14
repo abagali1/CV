@@ -180,7 +180,7 @@ dp closest_randomized(vector<Point>* points, const int N){
     unordered_map<ip, Point, hash_key> dict;
 
     for(int i=0; i<N; i++){
-        ip t1 = (ip){.i1=points->at(i).x/(md*0.5), .i2=points->at(i).y/(md*0.5)};
+        ip t1 = (ip){.i1=(ulli)(points->at(i).x/(md*0.5)), .i2=(ulli)(points->at(i).y/(md*0.5))};
         vector<Point> p;
         ulli one = 1/(md*0.5);
         for (ulli j = max(t1.i1-2, (ulli)0); j <= min(t1.i1+2, one); j++)
@@ -200,7 +200,7 @@ dp closest_randomized(vector<Point>* points, const int N){
                     minPoint = p.at(l);
                 }
             }
-            ip ns = (ip){.i1=minPoint.x/(md*0.5), .i2=minPoint.y/(md*0.5)};
+            ip ns = (ip){.i1=(ulli)(minPoint.x/(md*0.5)), .i2=(ulli)(minPoint.y/(md*0.5))};
             if(tmd < md){
                 p1 = points->at(i);
                 p2 = minPoint;
@@ -208,7 +208,7 @@ dp closest_randomized(vector<Point>* points, const int N){
                 dict.clear();
                 dict[ns] = minPoint;
                 for(int l=0; l<=i; l++){
-                    ip pc = (ip){.i1=points->at(l).x/(md*0.5), .i2=points->at(l).y/(md*0.5)};
+                    ip pc = (ip){.i1=(ulli)(points->at(l).x/(md*0.5)), .i2=(ulli)(points->at(l).y/(md*0.5))};
                     dict[pc] = points->at(l);
                 }
             }
