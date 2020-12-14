@@ -217,7 +217,6 @@ void part3(vector<Point>* points, const int N){
     }
     auto end_time = high_resolution_clock::now();
     li duration = duration_cast<microseconds>(end_time - start_time).count();
-    printf("%ld\n", duration);
     append_file("Full Recursive", d, duration);
 }
 
@@ -231,7 +230,6 @@ void part4(vector<Point>* points, const int N){
     }
     auto end_time = high_resolution_clock::now();
     li duration = duration_cast<microseconds>(end_time - start_time).count();
-    printf("%ld\n", duration);
     append_file("Randomized", d, duration);
 }
 
@@ -244,7 +242,7 @@ int main(int argc, char* argv[]) {
     part3(&p3, N);
     part4(&p4, N);
 
-    // cout << ifstream(OUTFILE).rdbuf();
+    cout << ifstream(OUTFILE).rdbuf();
 
     return 0;
 }
