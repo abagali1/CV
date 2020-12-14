@@ -1,5 +1,4 @@
 #include <chrono>
-#include <algorithm>
 #include <bits/stdc++.h>
 
 #define X 800
@@ -35,18 +34,31 @@ typedef struct {
     Point p1, p2;
 } dp;
 
-struct hash_pair { 
-    template <class T1, class T2> 
-    size_t operator()(const pair<T1, T2>& p) const
-    { 
-        auto hash1 = hash<T1>{}(p.first); 
-        auto hash2 = hash<T2>{}(p.second); 
-        return hash1 ^ hash2; 
-    } 
+struct int_pair{
+  ulli i1, i2;
+  bool operator==(const int_pair& other) const{
+    return i1==other.i1 && i2==other.i2;
+  }
+};
+
+typedef struct int_pair ip;
+
+struct hash_key
+{
+  std::size_t operator()(const int_pair& k) const
+  {
+    using std::size_t;
+    using std::hash;
+    using std::string;
+
+    return hash<int>()(k.i1) ^ hash<int>()(k.i2);
+  }
 }; 
  
 
-static inline double distance(Point p1, Point p2){ return sqrt(pow(p2.x-p1.x, 2) + pow(p2.y-p1.y,2)); }
+static inline double distance(Point p1, Point p2){
+    return sqrt(pow(p2.x-p1.x, 2) + pow(p2.y-p1.y,2)); 
+}
 
 static inline int compare_x(Point p1, Point p2){ return p1.x < p2.x; }
 
@@ -160,52 +172,54 @@ void shuffle(vector<Point>* points, int n){
     } 
 }
 
-dp closest_randomized(vector<Point>* all_points, const int N){
-    vector<Point> points = *all_points;
-    Point p1 = points[0];
-    Point p2 = points[1];
-    double md = distance(p1, p2);
-    unordered_map<pair<ulli, ulli>, Point, hash_pair> dict;
-    for(int i=0;i<N;i++){
-        pair<ulli, ulli> t1 = make_pair(points[i].x/(md*0.5), points[i].y/(md*0.5));
+dp closest_randomized(vector<Point>* points, const int N){
+    Point p1 = points->at(0);
+    Point p2 = points->at(1);
+
+    double d = distance(p1, p2);
+    unordered_map<ip, Point, hash_key> dict;
+
+    for(int i=0; i<N; i++){
+        ip t1 = (ip){.i1=points->at(i).x/(d*0.5), .i2=points->at(i).y/(d*0.5)};
         vector<Point> p;
-        ulli o = 1/(md*0.5);
-        for(ulli j=max(t1.first-2, (ulli)0); j<=min(t1.first+2,o);j++){
-            for(ulli k=max(t1.second-2, (ulli)0); k<=min(t1.second+2, o);k++){
-                pair<ulli, ulli> c = make_pair(j, k);
+        ulli one = 1/(d*0.5);
+        for (ulli j = max(t1.i1-2, (ulli)0); j <= min(t1.i1+2, one); j++)
+            for (ulli k = max(t1.i2-2, (ulli)0); k <= min(t1.i2+2, one); k++){
+                ip c = {.i1=j, .i2=k};
                 if(dict.find(c) != dict.end())
                     p.push_back(dict[c]);
             }
-            ulli s = p.size();
-            if(s){
-                double tin = distance(points[i], p[0]);
-                Point mp = p[0];
-                for(int l=1; l<s; l++){
-                    double qd = distance(points[i], p[l]);
-                    if(qd < tin){
-                        tin = qd;
-                        mp = p[l];
-                    }
+        int s = p.size();
+        if(s){
+            double tmd = distance(points->at(i), p.at(0));
+            Point minPoint = p.at(0);
+            for(int l=1; l<s; l++){
+                double qd = distance(points->at(i), p.at(l));
+                if(qd < tmd){
+                    tmd = qd;
+                    minPoint = p.at(l);
                 }
-                pair<ulli, ulli> ns = make_pair(mp.x/(md*0.5), mp.y/(md*0.5));
-                if(tin < md){
-                    p1 = points[i];
-                    p2 = mp;
-                    md = tin;
-                    dict.clear();
-                    dict[ns] = mp;
-                    for(int l=0;l<=i;l++){
-                        pair<ulli, ulli> pc = make_pair(points[l].x/(md*0.5), points[l].y/(md*0.5));
-                        dict[pc] = points[l];
-                    }
+            }
+            ip ns = (ip){.i1=minPoint.x/(d*0.5), .i2=minPoint.y/(d*0.5)};
+            if(tmd < d){
+                p1 = points->at(i);
+                p2 = minPoint;
+                d = tmd;
+                dict.clear();
+                dict[ns] = minPoint;
+                for(int l=0; l<=i; l++){
+                    ip pc = (ip){.i1=points->at(l).x/(d*0.5), .i2=points->at(l).y/(d*0.5)};
+                    dict[pc] = points->at(l);
                 }
-            }else{
-                dict[t1] = points[i];
             }
         }
+        else
+        {
+            dict[t1] = points->at(i);
+        }
+        
     }
-    cout << md << endl;
-    return (dp){.d=md, .p1=p1, .p2=p2};
+    return (dp){.d=d, .p1=p1, .p2=p2};
 }
 
 void part4(vector<Point>* points, const int N){
@@ -222,8 +236,8 @@ void part4(vector<Point>* points, const int N){
 }
 
 int main(int argc, char* argv[]) {
-    srand(time(0));
-    // srand(1738114);
+    // srand(time(0));
+    srand(1738114);
     vector<Point> p3, p4;
     const int N = read_file(&p3);
     p4 = p3;
