@@ -176,13 +176,13 @@ dp closest_randomized(vector<Point>* points, const int N){
     Point p1 = points->at(0);
     Point p2 = points->at(1);
 
-    double d = distance(p1, p2);
+    double md = distance(p1, p2);
     unordered_map<ip, Point, hash_key> dict;
 
     for(int i=0; i<N; i++){
-        ip t1 = (ip){.i1=points->at(i).x/(d*0.5), .i2=points->at(i).y/(d*0.5)};
+        ip t1 = (ip){.i1=points->at(i).x/(md*0.5), .i2=points->at(i).y/(md*0.5)};
         vector<Point> p;
-        ulli one = 1/(d*0.5);
+        ulli one = 1/(md*0.5);
         for (ulli j = max(t1.i1-2, (ulli)0); j <= min(t1.i1+2, one); j++)
             for (ulli k = max(t1.i2-2, (ulli)0); k <= min(t1.i2+2, one); k++){
                 ip c = {.i1=j, .i2=k};
@@ -200,15 +200,15 @@ dp closest_randomized(vector<Point>* points, const int N){
                     minPoint = p.at(l);
                 }
             }
-            ip ns = (ip){.i1=minPoint.x/(d*0.5), .i2=minPoint.y/(d*0.5)};
-            if(tmd < d){
+            ip ns = (ip){.i1=minPoint.x/(md*0.5), .i2=minPoint.y/(md*0.5)};
+            if(tmd < md){
                 p1 = points->at(i);
                 p2 = minPoint;
-                d = tmd;
+                md = tmd;
                 dict.clear();
                 dict[ns] = minPoint;
                 for(int l=0; l<=i; l++){
-                    ip pc = (ip){.i1=points->at(l).x/(d*0.5), .i2=points->at(l).y/(d*0.5)};
+                    ip pc = (ip){.i1=points->at(l).x/(md*0.5), .i2=points->at(l).y/(md*0.5)};
                     dict[pc] = points->at(l);
                 }
             }
@@ -219,7 +219,7 @@ dp closest_randomized(vector<Point>* points, const int N){
         }
         
     }
-    return (dp){.d=d, .p1=p1, .p2=p2};
+    return (dp){.d=md, .p1=p1, .p2=p2};
 }
 
 void part4(vector<Point>* points, const int N){
