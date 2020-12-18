@@ -8,7 +8,7 @@
 #define X 800
 #define Y 800
 #define K 5
-#define N 100
+#define N 1e6
 #define OUTFILE "cluster.ppm"
 
 
@@ -109,7 +109,7 @@ void gen_palette(Color palette[K]){
     palette[1] = Color(255, 0, 0);
     palette[2] = Color(0, 255, 0);
     palette[3] = Color(0, 0, 255);
-    palette[4] = Color(255, 255, 0);
+    palette[4] = Color(255, 0, 255);
     /*    
     for(int i=1;i<K;i++){
         int d = max(K*(int)((i-1)/3), 1);
@@ -187,11 +187,15 @@ void part1(){
     bool organized = false;
     do{
         organized = reorganize(&organized_means, means, points);
-        for(int i = 0; i<K;i++){
-            means[i].print();
-        }
-        cout << organized << endl;
     }while(!organized);
+    
+    for(int i=0;i<K;i++){
+        vector<Point> points = organized_means[means[i]];
+        for(int j=0;j<points.size();j++){
+            set_pixel(colors, Point(points[j], X, Y), palette[i]);
+            draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
+        }
+    }
 
 
     write_file(colors);
