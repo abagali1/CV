@@ -8,7 +8,7 @@
 #define X 800
 #define Y 800
 #define K 5
-#define N 1e6
+#define N 1e2
 #define OUTFILE "cluster.ppm"
 
 
@@ -38,7 +38,7 @@ class PointHash {
     public: 
         size_t operator()(const Point& p) const
         { 
-            return p.x + p.y;
+            return hash<double>()(p.x) ^ hash<double>()(p.y);
         } 
 }; 
 
@@ -91,6 +91,54 @@ void draw_circle(Color** c, Point center, double r, Color color){
         
         y2_new -= (2 * x) - 3;
     }
+}
+
+void draw_line(Color** colors, Point p1, Point p2, Color c){ // all cases
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    
+    int i1 = 0;
+    int i2 = 0;
+    int j1 = 0;
+    int j2 = 0;
+    i1 = dx > 0 ? 1 : -1;
+    i2 = dx > 0 ? 1 : -1;
+    j1 = dy > 0 ? 1 : -1;
+    
+    int i = std::abs(dx);
+    int j = std::abs(dy);
+    if(j>i){ // find DA
+        std::swap(i,j);
+        j2 = dy > 0 ? 1 : -1;
+        i2 = 0;
+    }
+    
+    int e = j/i;
+    int x0 = p1.x; // keep the Point ints intact
+    int y0 = p1.y;
+    for(int k=0;k<=i;k++){
+        set_pixel(colors,x0,y0, c);
+        e += j;
+        if(e>i){
+            e -= i;
+            x0 += i1;
+            y0 += j1;
+        }else{
+            x0 += i2;
+            y0 += j2;
+        }
+    }
+}
+
+void draw_square(Color** colors, Point center, int half_length, Color c){
+    Point tl = Point(center.x-half_length, center.y+half_length);
+    Point tr = Point(center.x+half_length, center.y+half_length);
+    Point bl = Point(center.x-half_length, center.y-half_length);
+    Point br = Point(center.x+half_length, center.y-half_length);
+    draw_line(colors, tl, tr, c);
+    draw_line(colors, tl, bl, c);
+    draw_line(colors, tr, br, c);
+    draw_line(colors, bl, br, c);
 }
 
 void write_file(Color** colors){
@@ -195,8 +243,8 @@ void part1(){
             set_pixel(colors, Point(points[j], X, Y), palette[i]);
             draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
         }
+        draw_square(colors, Point(points[i], X, Y), 4, palette[i]);
     }
-
 
     write_file(colors);
 
