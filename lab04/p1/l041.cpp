@@ -65,6 +65,7 @@ static inline void set_pixel(Color** c, Point p, Color color){
 }
 
 void draw_circle(Color** c, Point center, double r, Color color){
+    set_pixel(c, center, color);
     int x = 0;
     int y = r;
     int xmax = (int) (r * 0.70710678); 
@@ -93,54 +94,6 @@ void draw_circle(Color** c, Point center, double r, Color color){
     }
 }
 
-void draw_line(Color** colors, Point p1, Point p2, Color c){ // all cases
-    int dx = p2.x - p1.x;
-    int dy = p2.y - p1.y;
-    
-    int i1 = 0;
-    int i2 = 0;
-    int j1 = 0;
-    int j2 = 0;
-    i1 = dx > 0 ? 1 : -1;
-    i2 = dx > 0 ? 1 : -1;
-    j1 = dy > 0 ? 1 : -1;
-    
-    int i = std::abs(dx);
-    int j = std::abs(dy);
-    if(j>i){ // find DA
-        std::swap(i,j);
-        j2 = dy > 0 ? 1 : -1;
-        i2 = 0;
-    }
-    
-    int e = j/i;
-    int x0 = p1.x; // keep the Point ints intact
-    int y0 = p1.y;
-    for(int k=0;k<=i;k++){
-        set_pixel(colors,x0,y0, c);
-        e += j;
-        if(e>i){
-            e -= i;
-            x0 += i1;
-            y0 += j1;
-        }else{
-            x0 += i2;
-            y0 += j2;
-        }
-    }
-}
-
-void draw_square(Color** colors, Point center, int half_length, Color c){
-    Point tl = Point(center.x-half_length, center.y+half_length);
-    Point tr = Point(center.x+half_length, center.y+half_length);
-    Point bl = Point(center.x-half_length, center.y-half_length);
-    Point br = Point(center.x+half_length, center.y-half_length);
-    draw_line(colors, tl, tr, c);
-    draw_line(colors, tl, bl, c);
-    draw_line(colors, tr, br, c);
-    draw_line(colors, bl, br, c);
-}
-
 void write_file(Color** colors){
     FILE* fout = fopen(OUTFILE, "w");
     fprintf(fout, "P3\n%d %d\n255\n", X, Y);
@@ -153,7 +106,7 @@ void write_file(Color** colors){
 }
 
 void gen_palette(Color palette[K]){
-    palette[0] = Color(0,0,0);
+    palette[0] = Color(128,128,128);
     palette[1] = Color(255, 0, 0);
     palette[2] = Color(0, 255, 0);
     palette[3] = Color(0, 0, 255);
@@ -240,10 +193,9 @@ void part1(){
     for(int i=0;i<K;i++){
         vector<Point> points = organized_means[means[i]];
         for(int j=0;j<points.size();j++){
-            set_pixel(colors, Point(points[j], X, Y), palette[i]);
             draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
         }
-        draw_square(colors, Point(points[i], X, Y), 4, palette[i]);
+        draw_circle(colors, Point(means[i], X, Y), 3.0, BLACK);
     }
 
     write_file(colors);
