@@ -9,7 +9,7 @@
 #define Y 800
 #define K 5
 #define N 1e2
-#define OUTFILE "cluster.ppm"
+#define OUTFILE "clusters.ppm"
 
 
 using namespace std;
@@ -146,13 +146,13 @@ Point mean_for_point(Point means[K], Point p){
 bool reorganize(unordered_map<Point, vector<Point>, PointHash>* previous, Point means[K], vector<Point>* points){
     Point new_means[K];
     for(int i=0;i<K;i++){
-        vector<Point> points = previous->at(means[i]); 
-        int n = points.size();
+        vector<Point> tmp_points = previous->at(means[i]); 
+        int n = tmp_points.size();
         double x = 0;
         double y = 0;
         for(int j=0;j<n;j++){
-            x += points[j].x;
-            y += points[j].y;
+            x += tmp_points[j].x;
+            y += tmp_points[j].y;
         }
         new_means[i] = Point(x/n, y/n);
     }
