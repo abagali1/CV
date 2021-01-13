@@ -55,7 +55,7 @@ class ColorHash {
         { 
             return hash<uchar>()(p.r) ^ hash<uchar>()(p.g) ^ hash<uchar>()(p.b);
         } 
-}; 
+};
 
 int X, Y, N;
 const Color WHITE(255,255,255);
@@ -114,11 +114,9 @@ Color** read_file(vector<Color>& colors){
 void write_file(Color** colors){
     FILE* fout = fopen(OUTFILE, "w");
     fprintf(fout, "P3\n%d %d\n255\n", X, Y);
-    for(int i=0;i<X;i++){
-        for(int j=0;j<Y;j++){
+    for(int i=0;i<X;i++)
+        for(int j=0;j<Y;j++)
             fprintf(fout, "%d %d %d\n", colors[i][j].r, colors[i][j].g, colors[i][j].b);
-        }
-    }
     fclose(fout);
 }
 
@@ -165,82 +163,39 @@ bool reorganize(unordered_map<Color, vector<Color>, ColorHash>* previous, Color 
     return organized;
 }
 
-// void part1(){
-//     Point means[K];
-//     Color palette[K];
-//     Color** colors = new Color*[X];
-//     for(int i=0;i<X;i++){
-//         colors[i] = new Color[Y];
-//     }
-//     vector<Point>* points = new vector<Point>(N);
-//     gen_palette(palette);
-
-//     unordered_map<Point, vector<Point>, PointHash> organized_means;
-//     for(int i=0;i<N;i++){
-//         organized_means[mean_for_point(means, points->at(i))].push_back(points->at(i));
-//     }
-    
-//     bool organized = false;
-//     do{
-//         organized = reorganize(&organized_means, means, points);
-//     }while(!organized);
-    
-//     for(int i=0;i<K;i++){
-//         vector<Point> points = organized_means[means[i]];
-//         for(int j=0;j<points.size();j++){
-//             draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
-//         }
-//         draw_circle(colors, Point(means[i], X, Y), 3.0, BLACK);
-//     }
-
-//     write_file(colors);
-
-//     delete[] colors;
-//     delete points;
-// }
-
-
 void part2(){
     vector<Color>* pixels = new vector<Color>;
     Color** colors = read_file(*pixels);
+    
     Color means[K];
-    for(int i=0;i<K;i++){
+    for(int i=0;i<K;i++)
         means[i] = pixels->at(i);
-    }
     
     unordered_map<Color, vector<Color>, ColorHash> organized_means;
-    for(int i=0;i<N;i++){
+    for(int i=0;i<N;i++)
         organized_means[mean_for_pixel(means, pixels->at(i))].push_back(pixels->at(i));
-    }
     
     bool organized = false;
-    do{
+    do
         organized = reorganize(&organized_means, means, pixels);
-    }while(!organized);
+    while(!organized);
     
+    unordered_map<Color, Color, ColorHash> pixel_to_mean;
+    for(int i=0;i<K;i++)
+        for(const Color c: organized_means[means[i]])
+            pixel_to_mean[c] = means[i];
     
-    cout << "organized" << endl;
-    for(int i=0;i<X;i++){
-        for(int j=0;j<Y;j++){
-            Color c = colors[i][j];
-            for(const auto it: organized_means){
-                if(find(it.second.begin(), it.second.end(), c) != it.second.end()){
-                    colors[i][j] = it.first;
-                    break;
-                }
-            }
-        }
-    }
+    for(int i=0;i<X;i++)
+        for(int j=0;j<Y;j++)
+            colors[i][j] = pixel_to_mean[colors[i][j]];
     write_file(colors);
-    
+   
+   for(int i=0;i<X;i++)
+       delete[] colors[i];
    delete[] colors;
    delete pixels;
 }
 
-
-
-
 int main(int argv, char* argc[]){
-    srand(time(0));
     part2();
 }
