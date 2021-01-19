@@ -6,8 +6,8 @@
 #define uchar unsigned char
 
 #define K 4
-#define INFILE "peppers.ppm"
-#define OUTFILE "clusters.ppm"
+#define INFILE "input.ppm"
+#define OUTFILE "output.ppm"
 
 using namespace std;
 
