@@ -7,10 +7,8 @@
 
 #define X 800
 #define Y 800
-#define K 5
 #define INFILE "points.txt"
 #define OUTFILE "diagram.ppm"
-
 
 using namespace std;
 
@@ -24,19 +22,19 @@ class Point {
     Point(double _x, double _y): x(_x), y(_y){};
     Point(Point p1, double scalar): x(p1.x*scalar), y(p1.y*scalar){};
     Point(Point p1, double s_x, double s_y): x(p1.x*s_x), y(p1.y*s_y){};
-    inline double distance(Point& p){ return sqrt(pow(this->x-p.x, 2) + pow(this->y-p.y, 2)); }
+    inline double distance(Point &p){ return sqrt(pow(this->x-p.x, 2) + pow(this->y-p.y, 2)); }
     void print(){ printf("X: %e. Y: %e\n", this->x, this->y); };
-    bool operator == (const Point& p) const{
+    bool operator == (const Point &p) const{
         return this->x == p.x && this->y == p.y;
     }
-    bool operator != (const Point& p) const{
+    bool operator != (const Point &p) const{
         return this->x != p.x || this->y != p.y;
     }
 };
 
 class PointHash { 
     public: 
-        size_t operator()(const Point& p) const
+        size_t operator()(const Point &p) const
         { 
             return hash<double>()(p.x) ^ hash<double>()(p.y);
         } 
@@ -50,21 +48,87 @@ class Color{
         void print(){ printf("R: %d, G: %d, B: %d\n", this->r, this->g, this->b); };
 };
 
+
+template<typename T>
+class Node{
+    public:
+        Node* l;
+        Node* r;
+        T value;
+
+        Node(T _v): l(NULL), r(NULL), value(_v){};
+
+        static int height(Node<T>* n){
+            if(n == NULL)
+                return 0;
+            int lh = Node<T>::height(n->l);
+            int rh = Node<T>::height(n->r);
+
+            return max(lh, rh) + 1;
+        }
+};
+
+typedef struct{
+    int l, r, u, d;
+} Bounds;
+
+
+int N = 0;
 const Color WHITE(255,255,255);
 const Color BLACK(0,0,0);
+const Color RED(255, 0, 0);
+const Color BLUE(0, 0, 255);
 
-static inline void set_pixel(Color** c, double x, double y, Color color){
+static inline void set_pixel(Color **c, double x, double y, Color color){
     if(x >= X || x < 0 || y >= Y || y < 0){
         return;
     }
     c[(int)x][(int)y] = color;
 }
 
-static inline void set_pixel(Color** c, Point p, Color color){
+static inline void set_pixel(Color **c, Point p, Color color){
     set_pixel(c, p.x, p.y, color);
 }
 
-void draw_circle(Color** c, Point center, double r, Color color){
+void draw_line(Color **c, Point p1, Point p2, Color colar){ // all cases
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    
+    int i1 = 0;
+    int i2 = 0;
+    int j1 = 0;
+    int j2 = 0;
+    i1 = dx > 0 ? 1 : -1;
+    i2 = dx > 0 ? 1 : -1;
+    j1 = dy > 0 ? 1 : -1;
+    
+    int i = std::abs(dx);
+    int j = std::abs(dy);
+    if(j>i){ // find DA
+        std::swap(i,j);
+        j2 = dy > 0 ? 1 : -1;
+        i2 = 0;
+    }
+    
+    int e = j/i;
+    int x0 = p1.x; // keep the Point ints intact
+    int y0 = p1.y;
+    for(int k=0;k<=i;k++){
+        set_pixel(c,x0,y0,colar);
+        e += j;
+        if(e>i){
+            e -= i;
+            x0 += i1;
+            y0 += j1;
+        }else{
+            x0 += i2;
+            y0 += j2;
+        }
+    }
+}
+
+void draw_circle(Color **c, Point center, double r, Color color){
+    center.print();
     set_pixel(c, center, color);
     int x = 0;
     int y = r;
@@ -94,7 +158,7 @@ void draw_circle(Color** c, Point center, double r, Color color){
     }
 }
 
-void read_file(vector<Point>& points){
+void read_file(vector<Point> &points){
     points.clear();
     ifstream fin (INFILE);
     string line;
@@ -102,17 +166,19 @@ void read_file(vector<Point>& points){
     while(getline(fin, line)){
         int s = line.find(" ");
         points.push_back(Point(stod(line.substr(0, s), NULL), stod(line.substr(s+1,s), NULL)));
+        N++;
     }
 }
 
-void write_points(vector<Point>& points){
+void write_points(vector<Point> &points){
     FILE* fout = fopen(INFILE, "w");
-    for(int i=0;i<N;i++)
-        fprintf(fout, "%0.17lf %0.17lf\n", points[i].x, points[i].y);
+    for(Point &p: points)
+        fprintf(fout, "%0.17lf %0.17lf\n", p.x, p.y);
     fclose(fout);
+    N = 10;
 }
 
-void write_ppm(Color** colors){
+void write_ppm(Color **colors){
     FILE* fout = fopen(OUTFILE, "w");
     fprintf(fout, "P3\n%d %d\n255\n", X, Y);
     for(int i=0;i<X;i++){
@@ -123,17 +189,67 @@ void write_ppm(Color** colors){
     fclose(fout);
 }
 
+void draw_diagram(Color **c, Node<Point> *tree, int lub, int rbb, int d = 0){
+    if(tree == NULL)
+        return;
+    
+    if(!d){
+        draw_diagram(c, tree->l, lub, tree->value.x, !d);
+        draw_diagram(c, tree->r, tree->value.y, rbb, !d);
+
+        // draw_line(c, Point(tree->value.x, lub), Point(tree->value.x, rbb), RED);
+    }else{
+        draw_diagram(c, tree->l, tree->value.y, rbb, !d);
+        draw_diagram(c, tree->r, lub, tree->value.y, !d);
+
+        // draw_line(c, Point(lub, tree->value.y), Point(rbb, tree->value.y), BLUE);
+    }
+    draw_circle(c, Point(tree->value), 3.0, BLACK);
+}
+
+
+Node<Point>* insert(Point p, Node<Point> *tree = NULL, int d = 0){
+    if(tree == NULL){
+        tree = new Node<Point>(p);
+    }else if(!d){
+        if(p.x < tree->value.x)
+            tree->l = insert(p, tree->l, !d);
+        else
+            tree->r = insert(p, tree->r, !d);
+    }else{
+        if(p.y < tree->value.y)
+            tree->l = insert(p, tree->l, !d);
+        else
+            tree->r = insert(p, tree->r, !d);
+    }
+    return tree;
+}
 
 void part3(){
-    char i;
-    cout << "Generate Points? y/n ";
-    cin >> i;
+    string in;
+    do{
+        cout << "Generate Points? yes/no ";
+        cin >> in;
+    }while(in != "yes" && in != "no");
    
     vector<Point> points(10);
-    if(i == 'y')
+    if(in == "yes")
         write_points(points);
-    else
+    else if(in == "no")
         read_file(points);
+    
+    Node<Point> *tree = insert(Point(points[0], X, Y));
+    for(int i=1;i<N;i++)
+        insert(Point(points[i], X ,Y), tree);
+
+    Color** colors = new Color*[X];
+    for(int i=0;i<X;i++){
+        colors[i] = new Color[Y];
+    }
+
+    draw_diagram(colors, tree, 0, X, 0);
+    write_ppm(colors);    
+
 }
 
 
