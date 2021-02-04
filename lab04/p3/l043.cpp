@@ -68,10 +68,6 @@ class Node{
         }
 };
 
-typedef struct{
-    int l, r, u, d;
-} Bounds;
-
 
 int N = 0;
 const Color WHITE(255,255,255);
@@ -128,7 +124,6 @@ void draw_line(Color **c, Point p1, Point p2, Color colar){ // all cases
 }
 
 void draw_circle(Color **c, Point center, double r, Color color){
-    center.print();
     set_pixel(c, center, color);
     int x = 0;
     int y = r;
@@ -189,35 +184,31 @@ void write_ppm(Color **colors){
     fclose(fout);
 }
 
-void draw_diagram(Color **c, Node<Point> *tree, int lub, int rbb, int d = 0){
+void draw_diagram(Color **c, Node<Point> *tree, int lb, int rb, int d = 0){
     if(tree == NULL)
         return;
     
     if(!d){
-        draw_diagram(c, tree->l, lub, tree->value.x, !d);
-        draw_diagram(c, tree->r, tree->value.y, rbb, !d);
-
-        // draw_line(c, Point(tree->value.x, lub), Point(tree->value.x, rbb), RED);
+        draw_circle(c, tree->value, 3.0, RED);
+        draw_diagram(c, tree->l, lb, tree->value.y, !d);
+        draw_line(c, Point(lb, tree->value.y), Point(rb, tree->value.y), RED);
     }else{
-        draw_diagram(c, tree->l, tree->value.y, rbb, !d);
-        draw_diagram(c, tree->r, lub, tree->value.y, !d);
-
-        // draw_line(c, Point(lub, tree->value.y), Point(rbb, tree->value.y), BLUE);
+        draw_circle(c, tree->value, 3.0, BLUE);
+        draw_diagram(c, tree->l, lb, tree->value.x, !d);
+        draw_line(c, Point(tree->value.x, lb), Point(tree->value.x, rb), BLUE);
     }
-    draw_circle(c, Point(tree->value), 3.0, BLACK);
 }
-
 
 Node<Point>* insert(Point p, Node<Point> *tree = NULL, int d = 0){
     if(tree == NULL){
         tree = new Node<Point>(p);
-    }else if(!d){
+    }else if(d == 0){
         if(p.x < tree->value.x)
             tree->l = insert(p, tree->l, !d);
         else
             tree->r = insert(p, tree->r, !d);
     }else{
-        if(p.y < tree->value.y)
+        if(p.y > tree->value.y)
             tree->l = insert(p, tree->l, !d);
         else
             tree->r = insert(p, tree->r, !d);
