@@ -46,8 +46,15 @@ class Color{
         Color(): r(255), g(255), b(255){};
         Color(uchar _r, uchar _g, uchar _b): r(_r), g(_g), b(_b){};
         void print(){ printf("R: %d, G: %d, B: %d\n", this->r, this->g, this->b); };
-};
 
+        const bool operator==(const Color &c) const{
+            return this->r == c.r && this->g == c.g && this->b == c.b;
+        }
+
+        const bool operator!=(const Color &c) const {
+            return this->r != c.r || this->g != c.g || this->b != c.b;
+        }
+};
 
 template<typename T>
 class Node{
@@ -176,26 +183,91 @@ void write_points(vector<Point> &points){
 void write_ppm(Color **colors){
     FILE* fout = fopen(OUTFILE, "w");
     fprintf(fout, "P3\n%d %d\n255\n", X, Y);
-    for(int i=0;i<X;i++){
-        for(int j=0;j<Y;j++){
+    for(int j=0;j<Y;j++){
+        for(int i=0;i<X;i++){
             fprintf(fout, "%d %d %d\n", colors[i][j].r, colors[i][j].g, colors[i][j].b);
         }
     }
     fclose(fout);
 }
 
-void draw_diagram(Color **c, Node<Point> *tree, int lb, int rb, int d = 0){
-    if(tree == NULL)
-        return;
-    
-    if(!d){
-        draw_circle(c, tree->value, 3.0, RED);
-        draw_diagram(c, tree->l, lb, tree->value.y, !d);
-        draw_line(c, Point(lb, tree->value.y), Point(rb, tree->value.y), RED);
+void find_endpoints(Color **c, Point p, Point* p1, Point* p2, int d){
+    if(d){
+        p1 = new Point(p.x, 0);
+        p2 = new Point(p.x, X);
+        for(int i=p.x;i<X;i++)
+            if(c[i][(int)p.y] != WHITE){
+                p1->x = i;
+                p1->y = p.y;
+            }
+        for(int i=p.x;i>0;i--)
+            if(c[i][(int)p.y] != WHITE){
+                p2->x = i;
+                p2->y = p.y;
+            }
     }else{
-        draw_circle(c, tree->value, 3.0, BLUE);
-        draw_diagram(c, tree->l, lb, tree->value.x, !d);
-        draw_line(c, Point(tree->value.x, lb), Point(tree->value.x, rb), BLUE);
+        p1 = new Point(0, p.y);
+        p2 = new Point(800, p.y);
+    }
+}
+
+void draw_diagram(Color **c, Node<Point> *tree, int lb, int rb){
+    list<Node<Point>*> q;
+    q.push_back(tree);
+
+    int d = 0;
+    Point p1, p2;
+    while(!q.empty()){
+        Node<Point>* p = q.front();
+        q.pop_front();
+
+        Color cc = d == 0 ? RED : BLUE;
+
+        if(d){
+            p1.x = 0;
+            p1.y = p->value.y;
+            p2.x = 800;
+            p2.y = p->value.y;
+            for(int i=p->value.x; i>0;i--){
+                if(c[i][(int)p->value.y] != WHITE){
+                    p1.x = i;
+                    break;
+                }
+            }
+            for(int i=p->value.x;i<X;i++){
+                if(c[i][(int)p->value.y] != WHITE){
+                    p2.x = i;
+                    break;
+                }
+            }
+        }else{
+            p1.x = p->value.x;
+            p1.y = 0;
+            p2.x = p->value.x;
+            p2.y = 800;
+            for(int i=p->value.y;i>0;i--){
+                if(c[(int)p->value.x][i] != WHITE){
+                    p1.y = i;
+                    break;
+                }
+            }
+            for(int i=p->value.y;i<Y;i++){
+                if(c[(int)p->value.x][i] != WHITE){
+                    p2.y = i;
+                    break;
+                }
+            }
+        }
+
+        draw_line(c, p1, p2, cc);
+        draw_circle(c, p->value, 3.0, cc);
+
+        if(p->l)
+            q.push_back(p->l);
+        if(p->r)
+            q.push_back(p->r);
+        
+        d = !d;
     }
 }
 
@@ -208,7 +280,7 @@ Node<Point>* insert(Point p, Node<Point> *tree = NULL, int d = 0){
         else
             tree->r = insert(p, tree->r, !d);
     }else{
-        if(p.y > tree->value.y)
+        if(p.y < tree->value.y)
             tree->l = insert(p, tree->l, !d);
         else
             tree->r = insert(p, tree->r, !d);
@@ -238,7 +310,7 @@ void part3(){
         colors[i] = new Color[Y];
     }
 
-    draw_diagram(colors, tree, 0, X, 0);
+    draw_diagram(colors, tree, 0, X);
     write_ppm(colors);    
 
 }
