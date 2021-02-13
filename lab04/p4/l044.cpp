@@ -54,6 +54,17 @@ class Point: public Comparable<double, 2>{
         Point(): Comparable<double, 2>({rand()/(double)RAND_MAX, rand()/(double)RAND_MAX}) {};
         Point(Point& p1, double scalar): Comparable<double, 2>({p1.data[0]*scalar, p1.data[1]*scalar}) {};
         Point(Point& p1, double s_x, double s_y): Comparable<double, 2>({p1.data[0]*s_x, p1.data[1]*s_y}) {};
+
+        const bool operator==(const Point &p) const{
+            return this->data[0] == p.data[0] && this->data[1] == p.data[1];
+        }
+};
+
+class PointHash{
+    public:
+        const size_t operator()(const Point &p) const {
+            return hash<double>()(p[0]) ^ hash<double>()(p[1]);
+        }
 };
 
 class Color: public Comparable<uchar, 3>{
@@ -68,6 +79,9 @@ class KDNode{
     private:
         KDNode *_l, *_r;
         T _value;
+        T bounds[KD][2];
+        T possible_centroids[K];
+        T centroid;
     public:
         KDNode(T val): _l(NULL), _r(NULL), _value(val) {};
         ~KDNode(){
@@ -84,13 +98,11 @@ class KDNode{
         static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0){
             if(root == NULL)
                 return new KDNode<T>(value);
-            
             int i = d % KD;
             if(value[i] < root->get_value()[i])
                 root->set_left(KDNode<T>::insert(root->get_left(), value, d+1));
             else
                 root->set_right(KDNode<T>::insert(root->get_right(), value, d+1));
-
             return root;
         }
 
@@ -99,7 +111,6 @@ class KDNode{
                 return 0;
             int lh = KDNode<T>::height(n->get_left());
             int rh = KDNode<T>::height(n->get_right());
-
             return max(lh, rh) + 1;
         }
 };
@@ -110,11 +121,11 @@ const Color RED({255, 0, 0});
 const Color BLUE({0, 0, 255});
 const Color GREEN({0, 255, 0});
 const Color PURPLE({255, 0, 255});
+typedef unordered_map<Point, vector<Point>, PointHash> PointMap;
 
 static inline void set_pixel(Color **c, double x, double y, Color color){
-    if(x >= X || x < 0 || y >= Y || y < 0){
+    if(x >= X || x < 0 || y >= Y || y < 0)
         return;
-    }
     c[(int)x][(int)y] = color;
 }
 
@@ -175,13 +186,32 @@ void read_file(vector<Point> &points){
 void write_ppm(Color **colors){
     FILE* fout = fopen(OUTFILE, "w");
     fprintf(fout, "P3\n%d %d\n255\n", X, Y);
-    for(int j=0;j<Y;j++){
-        for(int i=0;i<X;i++){
+    for(int j=0;j<Y;j++)
+        for(int i=0;i<X;i++)
             fprintf(fout, "%d %d %d\n", colors[i][j][0], colors[i][j][1], colors[i][j][2]);
-        }
-    }
     fclose(fout);
 }
+
+bool reorganize(KDNode<Point> *root, PointMap &previous, Point centroids[K], vector<Point> &points){
+    Point new_centroids[K];
+    bool organized = true;
+    for(int i=0;i<K;i++){
+        double x = 0;
+        double y = 0;
+        int i = 0;
+        for(const Point &p: previous[centroids[i]]){
+            x += p[0];
+            y += p[1];
+            i++;
+        }
+        new_centroids[i] = Point({x/i, y/i});
+        if(organized && centroids[i] != new_centroids[i])
+            organized = false;
+    }
+    previous.clear();
+
+}
+
 
 void part4(){
     string in;
@@ -196,12 +226,37 @@ void part4(){
     else if(in == "no")
         read_file(points);
 
+    Point centroids[K];
     KDNode<Point> *tree = NULL;
-    for(Point &p: points)
-        tree = KDNode<Point>::insert(tree, p);
-    
+    for(int i=0;i<N;i++)
+        tree = KDNode<Point>::insert(tree, points[i]);
+
+
+    PointMap organized_centroids;
+    for(int i=0;i<N;i++)
+        organized_centroids[centroid_for_point(tree, centroids, points[i])].push_back(points[i]);
+
+
+    bool organized = false;
+    do{
+        organized = reorganize(tree, organized_centroids, centroids, points);
+
+    }while(!organized);
     
 
+
+    // Color **colors = new Color*[X];
+    // for(int i=0;i<X;i++)
+    //     colors[i] = new Color[Y];
+    
+
+    // write_ppm(colors);
+    
+    // for(int i=0;i<X;i++)
+    //     delete[] colors[i];
+    // delete[] colors;
+
+    delete tree;
 }
 
 
