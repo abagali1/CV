@@ -155,7 +155,7 @@ bool reorganize(unordered_map<Point, vector<Point>, PointHash> &previous, Point 
             n++;
         }
         Point nm = Point(x/n, y/n);
-        if(nm != means[i])
+        if(organized && (nm != means[i]))
             organized = false;
         means[i] = nm;
     }
