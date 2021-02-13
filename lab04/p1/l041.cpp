@@ -143,30 +143,25 @@ Point mean_for_point(Point means[K], Point p){
     return m;
 }
 
-bool reorganize(unordered_map<Point, vector<Point>, PointHash>* previous, Point means[K], vector<Point>* points){
-    Point new_means[K];
-    for(int i=0;i<K;i++){
-        vector<Point> tmp_points = previous->at(means[i]); 
-        int n = tmp_points.size();
-        double x = 0;
-        double y = 0;
-        for(int j=0;j<n;j++){
-            x += tmp_points[j].x;
-            y += tmp_points[j].y;
-        }
-        new_means[i] = Point(x/n, y/n);
-    }
-    previous->clear();
-    for(int i=0;i<N;i++){
-        Point p = points->at(i);
-        (*previous)[mean_for_point(new_means, p)].push_back(p); 
-    }
+bool reorganize(unordered_map<Point, vector<Point>, PointHash> &previous, Point means[K], vector<Point>* points){
     bool organized = true;
     for(int i=0;i<K;i++){
-        if(means[i] != new_means[i])
+        double x = 0;
+        double y = 0;
+        int n = 0;
+        for(const Point &p: previous[means[i]]){
+            x += p.x;
+            y += p.y;
+            n++;
+        }
+        Point nm = Point(x/n, y/n);
+        if(nm != means[i])
             organized = false;
-        means[i] = new_means[i];
+        means[i] = nm;
     }
+    previous.clear();
+    for(int i=0;i<N;i++)
+        previous[mean_for_point(means, points->at(i))].push_back(points->at(i)); 
     return organized;
 }
 
@@ -187,7 +182,7 @@ void part1(){
     
     bool organized = false;
     do{
-        organized = reorganize(&organized_means, means, points);
+        organized = reorganize(organized_means, means, points);
     }while(!organized);
     
     for(int i=0;i<K;i++){
