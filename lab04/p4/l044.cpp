@@ -31,16 +31,16 @@ class Comparable : public ComparableBase{
                 printf("%lf ", this->data[i]);
             printf("\n");
         }
-        const inline double distance(Comparable<T, N>& c) const {
+        const inline double distance(Comparable<T, N> &c) const {
             double d = 0;
             for(int i=0;i<N;i++)
                 d += pow(this->data[i-c.data[i]], 2);
             return sqrt(d);
         }
-        const bool operator==(Comparable<T, N>& c) const {
+        const bool operator==(Comparable<T, N> &c) const {
             return this->data == c.data;
         }
-        const bool operator!=(Comparable<T, N>& c) const {
+        const bool operator!=(Comparable<T, N> &c) const {
             return this->data != c.data;
         }
         const T& operator[](int i) const {
@@ -77,8 +77,8 @@ class KDNode{
         KDNode<T>* get_left(){ return this->_l; }
         KDNode<T>* get_right(){ return this->_r; }
         T get_value(){ return this->_value; }
-        void set_left(KDNode<T>* n){ this->_l = n; }
-        void set_right(KDNode<T>* n){ this->_r = n; }
+        void set_left(KDNode<T> *n){ this->_l = n; }
+        void set_right(KDNode<T> *n){ this->_r = n; }
         void set_value(T val){this->_value = val; }
 
         static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0){
@@ -94,7 +94,7 @@ class KDNode{
             return root;
         }
 
-        static int height(KDNode<T>* n){
+        static int height(KDNode<T> *n){
             if(n == NULL)
                 return 0;
             int lh = KDNode<T>::height(n->get_left());
@@ -196,11 +196,12 @@ void part4(){
     else if(in == "no")
         read_file(points);
 
-    KDNode<Point>* tree = NULL;
+    KDNode<Point> *tree = NULL;
     for(Point &p: points)
         tree = KDNode<Point>::insert(tree, p);
+    
+    
 
-    cout << KDNode<Point>::height(tree) << endl;
 }
 
 
