@@ -73,17 +73,26 @@ class Color: public Comparable<uchar, 3>{
         Color(const uchar(&list)[3]): Comparable<uchar, 3>(list) {};
 };
 
+typedef unordered_map<Point, vector<Point>, PointHash> PointMap;
+typedef array<array<int, 2>, 2> Bounds;
+
+
 template<typename T>
 class KDNode{
     static_assert(is_base_of<ComparableBase, T>::value);
     private:
         KDNode *_l, *_r;
         T _value;
-        T bounds[KD][2];
+        int bounds[KD][2];
         T possible_centroids[K];
         T centroid;
     public:
         KDNode(T val): _l(NULL), _r(NULL), _value(val) {};
+        KDNode(T val, int b[KD][2]): _l(NULL), _r(NULL), _value(val){
+            for(int i=0;i<KD;i++)
+                for(int j=0;j<2;j++)
+                    this->bounds[i][j] = b[i][j];
+        }
         ~KDNode(){
             delete this->_l;
             delete this->_r;
@@ -95,14 +104,19 @@ class KDNode{
         void set_right(KDNode<T> *n){ this->_r = n; }
         void set_value(T val){this->_value = val; }
 
-        static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0){
+        static KDNode<T>* insert(KDNode<T> *root, T value, Bounds bounds, int d = 0){
             if(root == NULL)
-                return new KDNode<T>(value);
+                return new KDNode<T>(value, bounds);
             int i = d % KD;
-            if(value[i] < root->get_value()[i])
-                root->set_left(KDNode<T>::insert(root->get_left(), value, d+1));
-            else
-                root->set_right(KDNode<T>::insert(root->get_right(), value, d+1));
+            if(value[i] < root->get_value()[i]){
+                b[i][0] = bounds[i][0];
+                b[i][1] = root->get_value()[i];
+                root->set_left(KDNode<T>::insert(root->get_left(), value, b, d+1));
+            }else{
+                b[i][0] = root->get_value()[i];
+                b[i][1] = bounds[i][1];
+                root->set_right(KDNode<T>::insert(root->get_right(), value, b, d+1));
+            }
             return root;
         }
 
@@ -121,7 +135,6 @@ const Color RED({255, 0, 0});
 const Color BLUE({0, 0, 255});
 const Color GREEN({0, 255, 0});
 const Color PURPLE({255, 0, 255});
-typedef unordered_map<Point, vector<Point>, PointHash> PointMap;
 
 static inline void set_pixel(Color **c, double x, double y, Color color){
     if(x >= X || x < 0 || y >= Y || y < 0)
@@ -192,24 +205,27 @@ void write_ppm(Color **colors){
     fclose(fout);
 }
 
+// Point centroid_for_point(KDNode<Point> *root, Point centroids[K], Point p){
+
+// }
+
 bool reorganize(KDNode<Point> *root, PointMap &previous, Point centroids[K], vector<Point> &points){
-    Point new_centroids[K];
     bool organized = true;
     for(int i=0;i<K;i++){
         double x = 0;
         double y = 0;
-        int i = 0;
+        int n = 0;
         for(const Point &p: previous[centroids[i]]){
             x += p[0];
             y += p[1];
-            i++;
+            n++;
         }
-        new_centroids[i] = Point({x/i, y/i});
-        if(organized && centroids[i] != new_centroids[i])
-            organized = false;
+        Point nc = Point({x/n, y/n});
+        organized = organized && nc != centroids[i];
+        centroids[i] = nc;
     }
     previous.clear();
-
+    return organized;
 }
 
 
@@ -228,20 +244,18 @@ void part4(){
 
     Point centroids[K];
     KDNode<Point> *tree = NULL;
+    Bounds bounds = {{0, X}, {0, Y}};
     for(int i=0;i<N;i++)
-        tree = KDNode<Point>::insert(tree, points[i]);
+        tree = KDNode<Point>::insert(tree, points[i], bounds);
 
 
-    PointMap organized_centroids;
-    for(int i=0;i<N;i++)
-        organized_centroids[centroid_for_point(tree, centroids, points[i])].push_back(points[i]);
+    // PointMap organized_centroids;
 
+    // bool organized = false;
+    // do{
+    //     organized = reorganize(tree, organized_centroids, centroids, points);
 
-    bool organized = false;
-    do{
-        organized = reorganize(tree, organized_centroids, centroids, points);
-
-    }while(!organized);
+    // }while(!organized);
     
 
 
