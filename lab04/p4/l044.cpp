@@ -58,6 +58,41 @@ class Point: public Comparable<double, 2>{
         const bool operator==(const Point &p) const{
             return this->data[0] == p.data[0] && this->data[1] == p.data[1];
         }
+
+        Point operator-(const Point &p) const{
+            return Point({this->data[0]-p[0], this->data[1]-p[1]});
+        }
+
+        double dot(const Point &p) const{
+            return this->data[0]*p[0] + this->data[1]*p[1];
+        }
+
+        static inline Point midpoint(Point p1, Point p2){
+            return Point({(p1[0]+p2[0])/2, (p1[1]+p2[1])/2});
+        }
+};
+
+class Line {
+    public:
+        double a, b, c;
+    Line(double a0, double b0, double c0){
+        a = a0;
+        b = b0;
+        c = c0;
+    }
+    Line(Point p1, Point p2){
+        a = p2[1] - p1[1];
+        b = p1[0] - p2[0];
+        c = a*(p1[0]) + b*(p1[1]);
+    }
+    void print(){
+        printf("A: %e B: %e, C: %e\n", this->a, this->b, this->c);
+    }
+
+    static Line perpendicular_bisector(Line l, Point p1, Point p2){
+        Point mid = Point::midpoint(p1,p2);
+        return Line(-l.b,l.a,-l.b*(mid[0])+l.a*(mid[1]));
+    }
 };
 
 class PointHash{
@@ -73,26 +108,17 @@ class Color: public Comparable<uchar, 3>{
         Color(const uchar(&list)[3]): Comparable<uchar, 3>(list) {};
 };
 
-typedef unordered_map<Point, vector<Point>, PointHash> PointMap;
-typedef array<array<int, 2>, 2> Bounds;
-
-
 template<typename T>
 class KDNode{
     static_assert(is_base_of<ComparableBase, T>::value);
     private:
         KDNode *_l, *_r;
         T _value;
-        int bounds[KD][2];
-        T possible_centroids[K];
         T centroid;
     public:
+        vector<T> possible_centroids = vector<T>(K);
+    
         KDNode(T val): _l(NULL), _r(NULL), _value(val) {};
-        KDNode(T val, int b[KD][2]): _l(NULL), _r(NULL), _value(val){
-            for(int i=0;i<KD;i++)
-                for(int j=0;j<2;j++)
-                    this->bounds[i][j] = b[i][j];
-        }
         ~KDNode(){
             delete this->_l;
             delete this->_r;
@@ -100,22 +126,24 @@ class KDNode{
         KDNode<T>* get_left(){ return this->_l; }
         KDNode<T>* get_right(){ return this->_r; }
         T get_value(){ return this->_value; }
+        T get_centroid(){ return this->centroid; }
         void set_left(KDNode<T> *n){ this->_l = n; }
         void set_right(KDNode<T> *n){ this->_r = n; }
         void set_value(T val){this->_value = val; }
+        void set_centroid(T c){this->centroid = c;}
 
-        static KDNode<T>* insert(KDNode<T> *root, T value, Bounds bounds, int d = 0){
+        const bool leaf() const {
+            return this->_l == NULL && this->_r == NULL;
+        }
+
+        static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0){
             if(root == NULL)
-                return new KDNode<T>(value, bounds);
+                return new KDNode<T>(value);
             int i = d % KD;
             if(value[i] < root->get_value()[i]){
-                b[i][0] = bounds[i][0];
-                b[i][1] = root->get_value()[i];
-                root->set_left(KDNode<T>::insert(root->get_left(), value, b, d+1));
+                root->set_left(KDNode<T>::insert(root->get_left(), value, d+1));
             }else{
-                b[i][0] = root->get_value()[i];
-                b[i][1] = bounds[i][1];
-                root->set_right(KDNode<T>::insert(root->get_right(), value, b, d+1));
+                root->set_right(KDNode<T>::insert(root->get_right(), value, d+1));
             }
             return root;
         }
@@ -129,12 +157,18 @@ class KDNode{
         }
 };
 
+typedef array<array<double, 2>, 2>  Bounds;
+typedef unordered_set<Point, PointHash> PointSet;
+typedef unordered_map<Point, vector<Point>, PointHash> PointMap;
+
 int N = 50;
 const Color BLACK({0, 0, 0});
 const Color RED({255, 0, 0});
 const Color BLUE({0, 0, 255});
 const Color GREEN({0, 255, 0});
 const Color PURPLE({255, 0, 255});
+
+const Bounds B0 = {{{0, 1}, {0, 1}}};
 
 static inline void set_pixel(Color **c, double x, double y, Color color){
     if(x >= X || x < 0 || y >= Y || y < 0)
@@ -201,33 +235,142 @@ void write_ppm(Color **colors){
     fprintf(fout, "P3\n%d %d\n255\n", X, Y);
     for(int j=0;j<Y;j++)
         for(int i=0;i<X;i++)
-            fprintf(fout, "%d %d %d\n", colors[i][j][0], colors[i][j][1], colors[i][j][2]);
+            fprintf(fout, "%d %d %d\n", colors[i][Y-1-j][0], colors[i][Y-1-j][1], colors[i][Y-1-j][2]);
     fclose(fout);
 }
 
-// Point centroid_for_point(KDNode<Point> *root, Point centroids[K], Point p){
+void gen_palette(Color palette[K]){
+    palette[0] = Color({128,128,128});
+    palette[1] = Color({255, 0, 0});
+    palette[2] = Color({0, 255, 0});
+    palette[3] = Color({0, 0, 255});
+    palette[4] = Color({255, 0, 255});
+}
 
-// }
+void print_bounds(Bounds b){
+    printf("Bounds: %lf %lf %lf %lf\n", b[0][0], b[0][1], b[1][0], b[1][1]);
+}
 
-bool reorganize(KDNode<Point> *root, PointMap &previous, Point centroids[K], vector<Point> &points){
+Point min_point(Point p1, vector<Point> &points, double *md = NULL){
+    if(points.size() == 1)
+        return points[0];
+    double d = DBL_MAX;
+    Point mp;
+    for(const Point &p: points){
+        double dist = p.distance(p1);
+        if(dist < d){
+            d = dist;
+            mp = p;
+        }
+    }
+    if(md != NULL)
+        *md = d;
+    return mp;
+}
+
+void get_boundary_points(Bounds b, Point points[4]){
+    points[0] = Point({b[0][0], b[1][0]});
+    points[1] = Point({b[0][0], b[1][1]});
+    points[2] = Point({b[0][1], b[1][0]});
+    points[3] = Point({b[0][1], b[1][1]});
+}
+
+void dominates(Point p1, Point p2, vector<Point> &bps, Point &d){ // who dominates
+    double d1, d2;
+    Point mps[4];
+    for(int i=0;i<4;i++){
+        d1 = p1.distance(bps[i]);
+        d2 = p2.distance(bps[i]);
+        mps[i] = d1 < d2 ? p1 : p2;
+    }
+
+    d = mps[0];
+    for(int i=1;i<4;i++){
+        if(d != mps[i]){
+            d.data[0] = -1;
+            d.data[0] = -1;
+        }
+    }
+}
+
+void exclude_centroids(Bounds b, vector<Point> &possible_centroids, vector<Point> &new_centroids){
+    int n = possible_centroids.size();
+    
+    Point boundaries[4];
+    get_boundary_points(b, boundaries);
+    vector<Point> bps;
+    bps.assign(boundaries, boundaries+4);
+
+    for(int i=0;i<n;i++){
+        for(int j=i+1;j<n;j++){
+            Point d;
+            dominates(possible_centroids[i], possible_centroids[j], bps, d);
+            
+            for(int k=0;k<new_centroids.size();k++){
+                if(new_centroids[k] == d){
+                    new_centroids.erase(new_centroids.begin() + k);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void update(KDNode<Point> *root, vector<Point> &possible_centroids, PointMap &centroids, Bounds bounds = B0, int d = 0){
+    if(root == NULL)
+        return;
+
+    // cout << possible_centroids.size() << endl;
+    Point mc = min_point(root->get_value(), possible_centroids);
+    root->set_centroid(mc);
+    centroids[mc].push_back(root->get_value());
+
+    vector<Point> new_centroids = possible_centroids;
+    exclude_centroids(bounds, possible_centroids, new_centroids);
+
+    int i = d % KD;
+    Bounds lb, rb;
+    lb[!i] = bounds[!i];
+    rb[!i] = bounds[!i];
+    lb[i] = {bounds[i][0], root->get_value()[i]};
+    rb[i] = {root->get_value()[i], bounds[i][1]};
+    
+    
+    update(root->get_left(), new_centroids, centroids, lb, d+1);
+    update(root->get_right(), new_centroids, centroids, rb, d+1);
+}
+
+bool reorganize(PointMap prev, vector<Point> prev_means){
     bool organized = true;
     for(int i=0;i<K;i++){
         double x = 0;
         double y = 0;
         int n = 0;
-        for(const Point &p: previous[centroids[i]]){
+        for(const Point &p: prev[prev_means[i]]){
             x += p[0];
             y += p[1];
             n++;
         }
-        Point nc = Point({x/n, y/n});
-        organized = organized && nc != centroids[i];
-        centroids[i] = nc;
+        Point nm({x/n, y/n});
+        organized = organized && nm != prev_means[i];
+        prev_means[i] = nm;
     }
-    previous.clear();
+    prev.clear();
     return organized;
 }
 
+void pgl(KDNode<Point> *root, int d){
+    if(root == NULL)
+        return;
+    if(d==1){
+        root->get_centroid().print();
+        root->get_value().print();
+        cout << endl;
+    }else if(d > 1){
+        pgl(root->get_left(), d-1);
+        pgl(root->get_right(), d-1);
+    }
+}
 
 void part4(){
     string in;
@@ -242,33 +385,44 @@ void part4(){
     else if(in == "no")
         read_file(points);
 
-    Point centroids[K];
+    vector<Point> centroids(K);
+    PointMap organized_centroids;
     KDNode<Point> *tree = NULL;
-    Bounds bounds = {{0, X}, {0, Y}};
     for(int i=0;i<N;i++)
-        tree = KDNode<Point>::insert(tree, points[i], bounds);
+        tree = KDNode<Point>::insert(tree, points[i]);
+
+    bool organized = false;
+    int i =0;
+    do{
+        update(tree, centroids, organized_centroids);
+        organized = reorganize(organized_centroids, centroids);
+        i++;
+    }while(!organized);
+
+    // for(const Point &p: centroids){
+    //     p.print();
+    //     cout << organized_centroids[p].size() << endl << endl;
+    // }
 
 
-    // PointMap organized_centroids;
-
-    // bool organized = false;
-    // do{
-    //     organized = reorganize(tree, organized_centroids, centroids, points);
-
-    // }while(!organized);
+    Color palette[K];
+    gen_palette(palette);
+    Color **colors = new Color*[X];
+    for(int i=0;i<X;i++)
+        colors[i] = new Color[Y];
     
+    for(int i=0;i<K;i++){
+        vector<Point> points = organized_centroids[centroids[i]];
+        for(int j=0;j<points.size();j++)
+            draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
+        draw_circle(colors, Point(centroids[i], X, Y), 5.0, BLACK);
+    }
 
-
-    // Color **colors = new Color*[X];
-    // for(int i=0;i<X;i++)
-    //     colors[i] = new Color[Y];
+    write_ppm(colors);
     
-
-    // write_ppm(colors);
-    
-    // for(int i=0;i<X;i++)
-    //     delete[] colors[i];
-    // delete[] colors;
+    for(int i=0;i<X;i++)
+        delete[] colors[i];
+    delete[] colors;
 
     delete tree;
 }
