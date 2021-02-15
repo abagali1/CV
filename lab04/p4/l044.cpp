@@ -321,12 +321,15 @@ void update(KDNode<Point> *root, vector<Point> &possible_centroids, PointMap &ce
         return;
 
     // cout << possible_centroids.size() << endl;
-    Point mc = min_point(root->get_value(), possible_centroids);
-    root->set_centroid(mc);
-    centroids[mc].push_back(root->get_value());
+    // Point mc = min_point(root->get_value(), possible_centroids);
+    // root->set_centroid(mc);
+    // centroids[mc].push_back(root->get_value());
 
-    vector<Point> new_centroids = possible_centroids;
-    exclude_centroids(bounds, possible_centroids, new_centroids);
+    // vector<Point> new_centroids = possible_centroids;
+    // exclude_centroids(bounds, possible_centroids, new_centroids);
+    root->get_value().print();
+    print_bounds(bounds);
+    cout << endl;
 
     int i = d % KD;
     Bounds lb, rb;
@@ -336,8 +339,8 @@ void update(KDNode<Point> *root, vector<Point> &possible_centroids, PointMap &ce
     rb[i] = {root->get_value()[i], bounds[i][1]};
     
     
-    update(root->get_left(), new_centroids, centroids, lb, d+1);
-    update(root->get_right(), new_centroids, centroids, rb, d+1);
+    update(root->get_left(), possible_centroids, centroids, lb, d+1);
+    update(root->get_right(), possible_centroids, centroids, rb, d+1);
 }
 
 bool reorganize(PointMap prev, vector<Point> prev_means){
@@ -352,7 +355,8 @@ bool reorganize(PointMap prev, vector<Point> prev_means){
             n++;
         }
         Point nm({x/n, y/n});
-        organized = organized && nm != prev_means[i];
+        if(nm != prev_means[i])
+            organized = false;
         prev_means[i] = nm;
     }
     prev.clear();
@@ -391,13 +395,14 @@ void part4(){
     for(int i=0;i<N;i++)
         tree = KDNode<Point>::insert(tree, points[i]);
 
-    bool organized = false;
-    int i =0;
-    do{
-        update(tree, centroids, organized_centroids);
-        organized = reorganize(organized_centroids, centroids);
-        i++;
-    }while(!organized);
+    update(tree, centroids, organized_centroids);
+    // bool organized = false;
+    // int i =0;
+    // do{
+    //     update(tree, centroids, organized_centroids);
+    //     organized = reorganize(organized_centroids, centroids);
+    //     i++;
+    // }while(!organized);
 
     // for(const Point &p: centroids){
     //     p.print();
@@ -411,12 +416,12 @@ void part4(){
     for(int i=0;i<X;i++)
         colors[i] = new Color[Y];
     
-    for(int i=0;i<K;i++){
-        vector<Point> points = organized_centroids[centroids[i]];
-        for(int j=0;j<points.size();j++)
-            draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
-        draw_circle(colors, Point(centroids[i], X, Y), 5.0, BLACK);
-    }
+    // for(int i=0;i<K;i++){
+    //     vector<Point> points = organized_centroids[centroids[i]];
+    //     for(int j=0;j<points.size();j++)
+    //         draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
+    //     draw_circle(colors, Point(centroids[i], X, Y), 5.0, BLACK);
+    // }
 
     write_ppm(colors);
     
