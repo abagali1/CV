@@ -9,6 +9,7 @@
 #define X 800
 #define Y 800
 
+#define E 0.0001
 #define INFILE "points.txt"
 #define OUTFILE "clusters.ppm"
 
@@ -34,14 +35,17 @@ class Comparable : public ComparableBase{
         const inline double distance(Comparable<T, N> &c) const {
             double d = 0;
             for(int i=0;i<N;i++)
-                d += pow(this->data[i-c.data[i]], 2);
+                d += pow(this->data[i]-c.data[i], 2);
             return sqrt(d);
         }
         const bool operator==(Comparable<T, N> &c) const {
             return this->data == c.data;
         }
         const bool operator!=(Comparable<T, N> &c) const {
-            return this->data != c.data;
+            for(int i=0;i<N;i++)
+                if(this->data[i] != c.data[i])
+                    return true;
+            return false;
         }
         const T& operator[](int i) const {
             return this->data[i];
@@ -275,22 +279,11 @@ void get_boundary_points(Bounds b, Point points[4]){
     points[3] = Point({b[0][1], b[1][1]});
 }
 
-void dominates(Point p1, Point p2, vector<Point> &bps, Point &d){ // who dominates
-    double d1, d2;
-    Point mps[4];
-    for(int i=0;i<4;i++){
-        d1 = p1.distance(bps[i]);
-        d2 = p2.distance(bps[i]);
-        mps[i] = d1 < d2 ? p1 : p2;
-    }
-
-    d = mps[0];
-    for(int i=1;i<4;i++){
-        if(d != mps[i]){
-            d.data[0] = -1;
-            d.data[0] = -1;
-        }
-    }
+bool dominates(Point p1, Point p2, Point bps[4]){ // does p1 dominate p2
+    for(int i=0;i<4;i++)
+        if(bps[i].distance(p2) < bps[i].distance(p1))
+            return false;
+    return true;
 }
 
 void exclude_centroids(Bounds b, vector<Point> &possible_centroids, vector<Point> &new_centroids){
@@ -298,18 +291,13 @@ void exclude_centroids(Bounds b, vector<Point> &possible_centroids, vector<Point
     
     Point boundaries[4];
     get_boundary_points(b, boundaries);
-    vector<Point> bps;
-    bps.assign(boundaries, boundaries+4);
-
+    
     for(int i=0;i<n;i++){
-        for(int j=i+1;j<n;j++){
-            Point d;
-            dominates(possible_centroids[i], possible_centroids[j], bps, d);
-            
-            for(int k=0;k<new_centroids.size();k++){
-                if(new_centroids[k] == d){
-                    new_centroids.erase(new_centroids.begin() + k);
-                    break;
+        for(int j=0;j<n;j++){
+            if(i != j){
+                bool d = dominates(possible_centroids[i], possible_centroids[j], boundaries);
+                if(d){
+                    new_centroids.erase(remove(new_centroids.begin(), new_centroids.end(), possible_centroids[j]), new_centroids.end());
                 }
             }
         }
@@ -320,16 +308,12 @@ void update(KDNode<Point> *root, vector<Point> &possible_centroids, PointMap &ce
     if(root == NULL)
         return;
 
-    // cout << possible_centroids.size() << endl;
-    // Point mc = min_point(root->get_value(), possible_centroids);
-    // root->set_centroid(mc);
-    // centroids[mc].push_back(root->get_value());
+    Point mc = min_point(root->get_value(), possible_centroids);
+    root->set_centroid(mc);
+    centroids[mc].push_back(root->get_value());
 
-    // vector<Point> new_centroids = possible_centroids;
-    // exclude_centroids(bounds, possible_centroids, new_centroids);
-    root->get_value().print();
-    print_bounds(bounds);
-    cout << endl;
+    vector<Point> new_centroids = possible_centroids;
+    exclude_centroids(bounds, possible_centroids, new_centroids);
 
     int i = d % KD;
     Bounds lb, rb;
@@ -339,11 +323,15 @@ void update(KDNode<Point> *root, vector<Point> &possible_centroids, PointMap &ce
     rb[i] = {root->get_value()[i], bounds[i][1]};
     
     
-    update(root->get_left(), possible_centroids, centroids, lb, d+1);
-    update(root->get_right(), possible_centroids, centroids, rb, d+1);
+    update(root->get_left(), new_centroids, centroids, lb, d+1);
+    update(root->get_right(), new_centroids, centroids, rb, d+1);
 }
 
-bool reorganize(PointMap prev, vector<Point> prev_means){
+bool centroid_equals(Point c1, Point c2){
+    return (abs(c1[0]-c2[0]) < E) && (abs(c1[1] - c2[1]) < E);
+}
+
+bool reorganize(PointMap prev, vector<Point> &prev_means){
     bool organized = true;
     for(int i=0;i<K;i++){
         double x = 0;
@@ -355,11 +343,13 @@ bool reorganize(PointMap prev, vector<Point> prev_means){
             n++;
         }
         Point nm({x/n, y/n});
-        if(nm != prev_means[i])
+        if(!centroid_equals(nm, prev_means[i])){
             organized = false;
+        }
         prev_means[i] = nm;
     }
-    prev.clear();
+    if(!organized)
+        prev.clear();
     return organized;
 }
 
@@ -395,20 +385,13 @@ void part4(){
     for(int i=0;i<N;i++)
         tree = KDNode<Point>::insert(tree, points[i]);
 
-    update(tree, centroids, organized_centroids);
-    // bool organized = false;
-    // int i =0;
-    // do{
-    //     update(tree, centroids, organized_centroids);
-    //     organized = reorganize(organized_centroids, centroids);
-    //     i++;
-    // }while(!organized);
-
-    // for(const Point &p: centroids){
-    //     p.print();
-    //     cout << organized_centroids[p].size() << endl << endl;
-    // }
-
+    bool organized = false;
+    int i =0;
+    do{
+        update(tree, centroids, organized_centroids);
+        organized = reorganize(organized_centroids, centroids);
+        i++;
+    }while(!organized);
 
     Color palette[K];
     gen_palette(palette);
@@ -416,19 +399,18 @@ void part4(){
     for(int i=0;i<X;i++)
         colors[i] = new Color[Y];
     
-    // for(int i=0;i<K;i++){
-    //     vector<Point> points = organized_centroids[centroids[i]];
-    //     for(int j=0;j<points.size();j++)
-    //         draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
-    //     draw_circle(colors, Point(centroids[i], X, Y), 5.0, BLACK);
-    // }
+    for(int i=0;i<K;i++){
+        vector<Point> points = organized_centroids[centroids[i]];
+        for(int j=0;j<points.size();j++)
+            draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
+        draw_circle(colors, Point(centroids[i], X, Y), 5.0, BLACK);
+    }
 
     write_ppm(colors);
     
     for(int i=0;i<X;i++)
         delete[] colors[i];
     delete[] colors;
-
     delete tree;
 }
 
