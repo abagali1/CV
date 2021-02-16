@@ -9,7 +9,7 @@
 #define X 800
 #define Y 800
 
-#define E 0.0001
+#define E 1e-100
 #define INFILE "points.txt"
 #define OUTFILE "clusters.ppm"
 
@@ -331,7 +331,7 @@ bool centroid_equals(Point c1, Point c2){
     return (abs(c1[0]-c2[0]) < E) && (abs(c1[1] - c2[1]) < E);
 }
 
-bool reorganize(PointMap prev, vector<Point> &prev_means){
+bool reorganize(PointMap &prev, vector<Point> &prev_means){
     bool organized = true;
     for(int i=0;i<K;i++){
         double x = 0;
@@ -351,19 +351,6 @@ bool reorganize(PointMap prev, vector<Point> &prev_means){
     if(!organized)
         prev.clear();
     return organized;
-}
-
-void pgl(KDNode<Point> *root, int d){
-    if(root == NULL)
-        return;
-    if(d==1){
-        root->get_centroid().print();
-        root->get_value().print();
-        cout << endl;
-    }else if(d > 1){
-        pgl(root->get_left(), d-1);
-        pgl(root->get_right(), d-1);
-    }
 }
 
 void part4(){
@@ -393,6 +380,11 @@ void part4(){
         i++;
     }while(!organized);
 
+    for(int i=0;i<K;i++){
+        centroids[i].print();
+        cout << organized_centroids[centroids[i]].size() << endl;
+    }
+
     Color palette[K];
     gen_palette(palette);
     Color **colors = new Color*[X];
@@ -416,6 +408,5 @@ void part4(){
 
 
 int main(int argc, char* argv[]){
-    srand(time(0));
     part4();
 }
