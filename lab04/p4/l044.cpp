@@ -388,7 +388,8 @@ void part4(){
     
     for(int i=0;i<K;i++){
         vector<Point> points = organized_centroids[centroids[i]];
-        for(int j=0;j<points.size();j++)
+        int n = points.size();
+        for(int j=0;j<n;j++)
             draw_circle(colors, Point(points[j], X, Y), 2.0, palette[i]);
         draw_circle(colors, Point(centroids[i], X, Y), 5.0, BLACK);
     }
