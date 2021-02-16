@@ -380,11 +380,6 @@ void part4(){
         i++;
     }while(!organized);
 
-    for(int i=0;i<K;i++){
-        centroids[i].print();
-        cout << organized_centroids[centroids[i]].size() << endl;
-    }
-
     Color palette[K];
     gen_palette(palette);
     Color **colors = new Color*[X];
