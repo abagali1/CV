@@ -10,41 +10,26 @@
 #define GOUTFILE "imageg.ppm"
 #define MOUTFILE "imagem.ppm"
 
-#define T 500
+#define T 300
+#define E 1
 
 using namespace std;
 
-class Color{
-    public:
-        uchar r, g, b;
-        Color(): r(255), g(255), b(255){};
-        Color(uchar _r, uchar _g, uchar _b): r(_r), g(_g), b(_b){};
-        inline int gray(){ return (this->r+this->b+this->g)/3; }
-        inline double distance(Color& c){ return sqrt(pow(this->r-c.r, 2)) + sqrt(pow(this->g-c.g,2)) + sqrt(pow(this->b-c.b, 2)); }
-        inline void print(){ printf("R: %d, G: %d, B: %d\n", this->r, this->g, this->b); };
-        
-        bool operator==(const Color& c) const{
-            return this->r == c.r && this->g == c.g && this->b == c.b;
-        }
-    
-        bool operator!=(const Color& c) const{
-            return this->r != c.r || this->g != c.g || this->b != c.b;
-        }
-};
-
-
 int X, Y, N;
-const Color WHITE(255,255,255);
-const Color BLACK(0,0,0);
 
-const vector<int> SX{1, 0, -1, 2, 0, -2, 1, 0, -1};
-const vector<int> SY{1, 2, 1, 0, 0, 0, -1, -2 ,-1};
+const int SX[9] = {1, 0, -1, 2, 0, -2, 1, 0, -1};
+const int SY[9] = {1, 2, 1, 0, 0, 0, -1, -2 ,-1};
 
-int** read_file(){
+template<typename C, int N>
+void print_array(C arr[N]){
+    for(int i=0;i<N;i++)
+        cout << arr[i] << ", ";
+    cout << endl;
+}
+
+vector<int>* read_file(){
     string line;
     ifstream fin(INFILE);
-    remove(GOUTFILE);
-    remove(MOUTFILE);
     
     getline(fin, line);
     getline(fin, line);
@@ -54,9 +39,7 @@ int** read_file(){
     Y = stoi(line.substr(s+1));
     N = X*Y;
 
-    int **colors = new int*[X];
-    for(int i=0;i<X;i++)
-        colors[i] = new int[Y];
+    vector<int> *gray = new vector<int>();
 
     getline(fin, line);
         
@@ -72,9 +55,9 @@ int** read_file(){
             t[j] = stoi(part);
             j++;
             if(j == 3){
-                Color tmp = Color(t[0], t[1], t[2]);
-                colors[i/Y][i%Y] = tmp.gray();
-                fprintf(fout, "%d %d %d ", tmp.gray(), tmp.gray(), tmp.gray());
+                int g = (t[0]+t[1]+t[2])/3;
+                gray->push_back(g);
+                fprintf(fout, "%d %d %d ", g, g, g);
                 j = 0;
                 i++;
             }
@@ -82,34 +65,48 @@ int** read_file(){
         fprintf(fout, "\n");
     }
     fclose(fout);
-    return colors;
+    return gray;
 }
 
-void write_result(Color **colors){
+void write_result(vector<int> *colors){
     FILE* fout = fopen(MOUTFILE, "w");
     fprintf(fout, "P3\n%d %d\n255\n", X, Y);
-    for(int i=0;i<X;i++)
-        for(int j=0;j<Y;j++)
-            fprintf(fout, "%d %d %d\n", colors[i][j].r, colors[i][j].g, colors[i][j].b);
+    for(int i=0;i<N;i++)
+        fprintf(fout, "%d %d %d\n", colors->at(i), colors->at(i), colors->at(i));
     fclose(fout);
 }
 
-double dot(vector<int> &p, vector<int> &op){
-    return 1.0;
+double dot(const int p[9], const int op[9]){
+    return p[0]*op[0] + p[1]*op[1] + p[2]*op[2] + p[3]*op[3] + p[4]*op[4] + p[5]*op[5] + p[6]*op[6] + p[7]*op[7] + p[8]*op[8];
 }
 
+bool edge(int i){
+    return (i < X) || (!(i%X)) || (!(i+1)%X) || (i > X*(Y-1));
+}
 
-void sobel_threshold(int **grayscale){
-
+void sobel_threshold(vector<int> &grayscale){
+    vector<int> *gradient = new vector<int>(N);
+    for(int i=0;i<N;i++){
+        if((i < X) || (!(i%X)) || (!i%(X-1)) || (i > X*(Y-1))){ // edge case
+            gradient->at(i) = 0;
+        }else{
+            int grad[9] = {
+                grayscale[i-X-1], grayscale[i-X], grayscale[i-X+1],
+                grayscale[i-1]  , grayscale[i]  , grayscale[i+1]  ,
+                grayscale[i+X-1], grayscale[i+X], grayscale[i+X+1],
+            };
+            gradient->at(i) = sqrt(pow(dot(grad, SX), 2) + pow(dot(grad, SY), 2)) > T ? 255 : 0;
+        }
+    }
+    write_result(gradient);
+    delete gradient;
 }
 
 void part1(){
-    int **g = read_file();
-    // sobel_threshold(g);
+    vector<int> *gray = read_file();
+    sobel_threshold(*gray);
 
-    for(int i=0;i<X;i++)
-        delete[] g[i];
-    delete[] g;
+    delete gray;
 }
 
 
