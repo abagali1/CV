@@ -87,9 +87,12 @@ bool edge(int i){
 void sobel_threshold(vector<int> &grayscale){
     vector<int> *gradient = new vector<int>(N);
     for(int i=0;i<N;i++){
-        if((i < X) || (!(i%X)) || (!i%(X-1)) || (i > X*(Y-1))){ // edge case
+        if((i < X) || (!(i%X)) || (i > X*(Y-1))){ // edge case
             gradient->at(i) = 0;
-        }else{
+        }else if(!( (i+1) % X)){
+            gradient->at(i) = 0;
+        }
+        else{
             int grad[9] = {
                 grayscale[i-X-1], grayscale[i-X], grayscale[i-X+1],
                 grayscale[i-1]  , grayscale[i]  , grayscale[i+1]  ,
@@ -105,7 +108,6 @@ void sobel_threshold(vector<int> &grayscale){
 void part1(){
     vector<int> *gray = read_file();
     sobel_threshold(*gray);
-
     delete gray;
 }
 
