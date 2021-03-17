@@ -71,8 +71,9 @@ class KDNode{
         KDNode *_l, *_r;
         T _value;
         double lower, upper;
+        int dim;
     public:
-        KDNode(T val): _l(NULL), _r(NULL), _value(val), lower(-1), upper(-1) {};
+        KDNode(T val): _l(NULL), _r(NULL), _value(val), lower(-1), upper(-1), dim(-1) {};
         ~KDNode(){
             delete this->_l;
             delete this->_r;
@@ -82,25 +83,34 @@ class KDNode{
         double get_lower(){ return this->lower; }
         double get_upper(){ return this->upper; }
         T get_value(){ return this->_value; }
+        int get_dim(){ return this->dim; };
         
         void set_left(KDNode<T> *n){ this->_l = n; }
         void set_right(KDNode<T> *n){ this->_r = n; }
         void set_value(T val){this->_value = val; }
         void set_upper(double u){ this->upper = u; }
         void set_lower(double l){ this ->lower = l; }
+        void set_dim(int i){ this->dim = i; }
     
         const bool leaf() const {
             return this->_l == NULL && this->_r == NULL;
         }
     
-        static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0){
+        static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0, int l = 0, int u = 1){
             if(root == NULL)
                 return new KDNode<T>(value);
             int i = d % KD;
-            if(value[i] < root->get_value()[i]){
-                root->set_left(KDNode<T>::insert(root->get_left(), value, d+1));
+            
+            root->set_dim(i);
+            root->set_lower(l);
+            root->set_upper(u);
+            
+            double comp = root->get_value()[i];
+            
+            if(value[i] < comp){
+                root->set_left(KDNode<T>::insert(root->get_left(), value, d+1, l, comp));
             }else{
-                root->set_right(KDNode<T>::insert(root->get_right(), value, d+1));
+                root->set_right(KDNode<T>::insert(root->get_right(), value, d+1, comp, u));
             }
             return root;
         }
@@ -113,7 +123,6 @@ class KDNode{
             preorder(root->get_right());
         }
 };
-
 
 int N = 0;
 const Color WHITE(255,255,255);
@@ -231,7 +240,17 @@ void draw_diagram(Color **colors, KDNode<Point> *tree){
     if(tree == NULL)
         return;
     
-    draw_circle(colors, Point(tree->get_value(), X, Y), 2.0, BLACK);
+    Point p = Point(tree->get_value(), X, Y);
+    int lower = (int)tree->get_lower() * X;
+    int upper = (int)tree->get_upper() * X;
+    if(tree->get_dim() == 0){
+        draw_circle(colors, p, 2.0, RED);
+        draw_line(colors, Point(p.x, lower), Point(p.x, upper), RED);
+    }else{
+        draw_circle(colors, p, 2.0, BLUE);
+        draw_line(colors, Point(lower, p.y), Point(upper, p.y), BLUE);
+    }
+    
     draw_diagram(colors, tree->get_left());
     draw_diagram(colors, tree->get_right());
 }
@@ -252,17 +271,26 @@ void part3(){
     KDNode<Point> *tree = NULL;
     for(const Point &p: points)
         tree = KDNode<Point>::insert(tree, p);
+    cout << "created tree" << endl;
     
-    Color** colors = new Color*[X];
-    for(int i=0;i<X;i++){
-        colors[i] = new Color[Y];
-    }
-    draw_diagram(colors, tree);
-    write_ppm(colors);    
+    cout << tree->get_dim() << ": " << tree->get_lower() << " " << tree->get_upper() << endl;
+    tree = tree->get_right();
+    cout << tree->get_dim() << ": " << tree->get_lower() << " " << tree->get_upper() << endl;
+    
+    
+//     Color** colors = new Color*[X];
+//     for(int i=0;i<X;i++){
+//         colors[i] = new Color[Y];
+//     }
+//     cout << "initialized colors" << endl;
+//     draw_diagram(colors, tree);
+//     cout << "created diagram" << endl;
+//     write_ppm(colors);
+//     cout << "wrote ppm" << endl;
         
-    for(int i=0;i<X;i++)
-        delete[] colors[i];
-    delete[] colors;
+//     for(int i=0;i<X;i++)
+//         delete[] colors[i];
+//     delete[] colors;
     delete tree;
     
 
