@@ -1,10 +1,12 @@
 // Anup Bagali
 // Period 7
-// 12/16/2020
+// 03/17/2021
+// l043 REDO
 #include <bits/stdc++.h>
 
 #define uchar unsigned char
 
+#define KD 2
 #define X 800
 #define Y 800
 #define INFILE "points.txt"
@@ -16,37 +18,39 @@ class Point {
     public:
         double x, y;
     Point(){
-        this->x = rand()/(double)RAND_MAX;
-        this->y = rand()/(double)RAND_MAX;
+        this->x = (double)rand()/(double)RAND_MAX;
+        this->y = (double)rand()/(double)RAND_MAX;
     }
     Point(double _x, double _y): x(_x), y(_y){};
     Point(Point p1, double scalar): x(p1.x*scalar), y(p1.y*scalar){};
     Point(Point p1, double s_x, double s_y): x(p1.x*s_x), y(p1.y*s_y){};
     inline double distance(Point &p){ return sqrt(pow(this->x-p.x, 2) + pow(this->y-p.y, 2)); }
-    void print(){ printf("X: %e. Y: %e\n", this->x, this->y); };
     bool operator == (const Point &p) const{
         return this->x == p.x && this->y == p.y;
     }
     bool operator != (const Point &p) const{
         return this->x != p.x || this->y != p.y;
     }
+    friend ostream& operator << (ostream &out, const Point& p) {
+        out << fixed << setprecision(17) << p.x << "  " << p.y;
+        return out;
+    }
+    friend istream& operator>>(istream &input, Point &p){
+      input >> p.x >> p.y;
+      return input;
+    }
+    const double& operator[](int i) const{
+        if(i < 0 || i >=2)
+            throw invalid_argument("point range out of bounds");
+        return i == 0 ? this->x : this->y;
+    }
 };
-
-class PointHash { 
-    public: 
-        size_t operator()(const Point &p) const
-        { 
-            return hash<double>()(p.x) ^ hash<double>()(p.y);
-        } 
-}; 
 
 class Color{
     public:
         uchar r, g, b;
         Color(): r(255), g(255), b(255){};
         Color(uchar _r, uchar _g, uchar _b): r(_r), g(_g), b(_b){};
-        void print(){ printf("R: %d, G: %d, B: %d\n", this->r, this->g, this->b); };
-
         const bool operator==(const Color &c) const{
             return this->r == c.r && this->g == c.g && this->b == c.b;
         }
@@ -54,24 +58,59 @@ class Color{
         const bool operator!=(const Color &c) const {
             return this->r != c.r || this->g != c.g || this->b != c.b;
         }
+        
+        friend ostream &operator<<(ostream &out, const Color &c){
+            out << (int)c.r << " " << (int)c.g << " " << (int)c.b << " ";
+            return out;
+        }
 };
 
 template<typename T>
-class Node{
+class KDNode{
+    private:
+        KDNode *_l, *_r;
+        T _value;
+        double lower, upper;
     public:
-        Node* l;
-        Node* r;
-        T value;
-
-        Node(T _v): l(NULL), r(NULL), value(_v){};
-
-        static int height(Node<T>* n){
-            if(n == NULL)
-                return 0;
-            int lh = Node<T>::height(n->l);
-            int rh = Node<T>::height(n->r);
-
-            return max(lh, rh) + 1;
+        KDNode(T val): _l(NULL), _r(NULL), _value(val), lower(-1), upper(-1) {};
+        ~KDNode(){
+            delete this->_l;
+            delete this->_r;
+        }
+        KDNode<T>* get_left(){ return this->_l; }
+        KDNode<T>* get_right(){ return this->_r; }
+        double get_lower(){ return this->lower; }
+        double get_upper(){ return this->upper; }
+        T get_value(){ return this->_value; }
+        
+        void set_left(KDNode<T> *n){ this->_l = n; }
+        void set_right(KDNode<T> *n){ this->_r = n; }
+        void set_value(T val){this->_value = val; }
+        void set_upper(double u){ this->upper = u; }
+        void set_lower(double l){ this ->lower = l; }
+    
+        const bool leaf() const {
+            return this->_l == NULL && this->_r == NULL;
+        }
+    
+        static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0){
+            if(root == NULL)
+                return new KDNode<T>(value);
+            int i = d % KD;
+            if(value[i] < root->get_value()[i]){
+                root->set_left(KDNode<T>::insert(root->get_left(), value, d+1));
+            }else{
+                root->set_right(KDNode<T>::insert(root->get_right(), value, d+1));
+            }
+            return root;
+        }
+    
+        static void preorder(KDNode<T> *root){
+            if(root == NULL)
+                return;
+            cout << root->get_value();
+            preorder(root->get_left());
+            preorder(root->get_right());
         }
 };
 
@@ -163,129 +202,20 @@ void draw_circle(Color **c, Point center, double r, Color color){
 void read_file(vector<Point> &points){
     points.clear();
     ifstream fin (INFILE);
-    string line;
     remove(OUTFILE);
-    while(getline(fin, line)){
-        int s = line.find(" ");
-        points.push_back(Point(stod(line.substr(0, s), NULL), stod(line.substr(s+1,s), NULL)));
-        N++;
+    Point p;
+    while(fin){
+        fin >> p;
+        points.push_back(p);
     }
 }
 
 void write_points(vector<Point> &points){
-    FILE* fout = fopen(INFILE, "w");
-    for(Point &p: points)
-        fprintf(fout, "%0.17lf %0.17lf\n", p.x, p.y);
-    fclose(fout);
+    ofstream out(INFILE);
+    for(const Point &p: points)
+        out << p << endl;
+    out.close();
     N = 10;
-}
-
-void write_ppm(Color **colors){
-    FILE* fout = fopen(OUTFILE, "w");
-    fprintf(fout, "P3\n%d %d\n255\n", X, Y);
-    for(int j=0;j<Y;j++){
-        for(int i=0;i<X;i++){
-            fprintf(fout, "%d %d %d\n", colors[i][j].r, colors[i][j].g, colors[i][j].b);
-        }
-    }
-    fclose(fout);
-}
-
-void find_endpoints(Color **c, Point p, Point* p1, Point* p2, int d){
-    if(d){
-        p1 = new Point(p.x, 0);
-        p2 = new Point(p.x, X);
-        for(int i=p.x;i<X;i++)
-            if(c[i][(int)p.y] != WHITE){
-                p1->x = i;
-                p1->y = p.y;
-            }
-        for(int i=p.x;i>0;i--)
-            if(c[i][(int)p.y] != WHITE){
-                p2->x = i;
-                p2->y = p.y;
-            }
-    }else{
-        p1 = new Point(0, p.y);
-        p2 = new Point(800, p.y);
-    }
-}
-
-void draw_diagram(Color **c, Node<Point> *tree, int lb, int rb){
-    list<Node<Point>*> q;
-    q.push_back(tree);
-
-    int d = 0;
-    Point p1, p2;
-    while(!q.empty()){
-        Node<Point>* p = q.front();
-        q.pop_front();
-
-        Color cc = d == 0 ? RED : BLUE;
-
-        if(d){
-            p1.x = 0;
-            p1.y = p->value.y;
-            p2.x = 800;
-            p2.y = p->value.y;
-            for(int i=p->value.x; i>0;i--){
-                if(c[i][(int)p->value.y] != WHITE){
-                    p1.x = i;
-                    break;
-                }
-            }
-            for(int i=p->value.x;i<X;i++){
-                if(c[i][(int)p->value.y] != WHITE){
-                    p2.x = i;
-                    break;
-                }
-            }
-        }else{
-            p1.x = p->value.x;
-            p1.y = 0;
-            p2.x = p->value.x;
-            p2.y = 800;
-            for(int i=p->value.y;i>0;i--){
-                if(c[(int)p->value.x][i] != WHITE){
-                    p1.y = i;
-                    break;
-                }
-            }
-            for(int i=p->value.y;i<Y;i++){
-                if(c[(int)p->value.x][i] != WHITE){
-                    p2.y = i;
-                    break;
-                }
-            }
-        }
-
-        draw_line(c, p1, p2, cc);
-        draw_circle(c, p->value, 3.0, cc);
-
-        if(p->l)
-            q.push_back(p->l);
-        if(p->r)
-            q.push_back(p->r);
-        
-        d = !d;
-    }
-}
-
-Node<Point>* insert(Point p, Node<Point> *tree = NULL, int d = 0){
-    if(tree == NULL){
-        tree = new Node<Point>(p);
-    }else if(d == 0){
-        if(p.x < tree->value.x)
-            tree->l = insert(p, tree->l, !d);
-        else
-            tree->r = insert(p, tree->r, !d);
-    }else{
-        if(p.y < tree->value.y)
-            tree->l = insert(p, tree->l, !d);
-        else
-            tree->r = insert(p, tree->r, !d);
-    }
-    return tree;
 }
 
 void part3(){
@@ -301,17 +231,19 @@ void part3(){
     else if(in == "no")
         read_file(points);
     
-    Node<Point> *tree = insert(Point(points[0], X, Y));
-    for(int i=1;i<N;i++)
-        insert(Point(points[i], X ,Y), tree);
+    KDNode<Point> *tree = NULL;
+    for(const Point &p: points)
+        tree = KDNode<Point>::insert(tree, p);
+    
+    cout << "constructed tree" << endl;
 
-    Color** colors = new Color*[X];
-    for(int i=0;i<X;i++){
-        colors[i] = new Color[Y];
-    }
-
-    draw_diagram(colors, tree, 0, X);
-    write_ppm(colors);    
+   
+    
+    for(int i=0;i<X;i++)
+        delete[] colors[i];
+    delete[] colors;
+    delete tree;
+    
 
 }
 
