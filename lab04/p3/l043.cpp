@@ -218,6 +218,24 @@ void write_points(vector<Point> &points){
     N = 10;
 }
 
+void write_ppm(Color **colors){
+    ofstream out(OUTFILE);
+    out << "P3" << endl << X << " " << Y << endl << 255 << endl;
+    for(int i=0;i<X;i++)
+        for(int j=0;j<Y;j++)
+            out << colors[j][i];
+    out.close();
+}
+
+void draw_diagram(Color **colors, KDNode<Point> *tree){
+    if(tree == NULL)
+        return;
+    
+    draw_circle(colors, Point(tree->get_value(), X, Y), 2.0, BLACK);
+    draw_diagram(colors, tree->get_left());
+    draw_diagram(colors, tree->get_right());
+}
+
 void part3(){
     string in;
     do{
@@ -235,10 +253,13 @@ void part3(){
     for(const Point &p: points)
         tree = KDNode<Point>::insert(tree, p);
     
-    cout << "constructed tree" << endl;
-
-   
-    
+    Color** colors = new Color*[X];
+    for(int i=0;i<X;i++){
+        colors[i] = new Color[Y];
+    }
+    draw_diagram(colors, tree);
+    write_ppm(colors);    
+        
     for(int i=0;i<X;i++)
         delete[] colors[i];
     delete[] colors;
