@@ -81,15 +81,13 @@ double dot(const int p[9], const int op[9]){
 }
 
 bool edge(int i){
-    return (i < X) || (!(i%X)) || (!(i+1)%X) || (i > X*(Y-1));
-}
+    return (i < X) || (!(i%X)) || !((i+1)%X) || (i > X*(Y-1));
+}}
 
 void sobel_threshold(vector<int> &grayscale){
     vector<int> *gradient = new vector<int>(N);
     for(int i=0;i<N;i++){
-        if((i < X) || (!(i%X)) || (i > X*(Y-1))){ // edge case
-            gradient->at(i) = 0;
-        }else if(!( (i+1) % X)){
+        if(edge(i)){
             gradient->at(i) = 0;
         }
         else{
