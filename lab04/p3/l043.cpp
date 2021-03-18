@@ -74,6 +74,14 @@ class KDNode{
         int dim;
     public:
         KDNode(T val): _l(NULL), _r(NULL), _value(val), lower(-1), upper(-1), dim(-1) {};
+
+        KDNode(T val, double l, double u, int d)
+            : _l(NULL), _r(NULL),
+              _value(val),
+              lower(l), upper(u),
+              dim(d)
+        {}
+
         ~KDNode(){
             delete this->_l;
             delete this->_r;
@@ -96,20 +104,19 @@ class KDNode{
             return this->_l == NULL && this->_r == NULL;
         }
     
-        static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0, int l = 0, int u = 1){
-            if(root == NULL)
-                return new KDNode<T>(value);
+        static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0, double l = 0, double u = 1){
             int i = d % KD;
-            
-            root->set_dim(i);
-            root->set_lower(l);
-            root->set_upper(u);
-            
+            if(root == NULL){
+                return new KDNode<T>(value, l, u, i);
+            }
+
             double comp = root->get_value()[i];
             
             if(value[i] < comp){
+                cout << "l" << endl;
                 root->set_left(KDNode<T>::insert(root->get_left(), value, d+1, l, comp));
             }else{
+                cout << "r" << endl;
                 root->set_right(KDNode<T>::insert(root->get_right(), value, d+1, comp, u));
             }
             return root;
@@ -208,25 +215,6 @@ void draw_circle(Color **c, Point center, double r, Color color){
     }
 }
 
-void read_file(vector<Point> &points){
-    points.clear();
-    ifstream fin (INFILE);
-    remove(OUTFILE);
-    Point p;
-    while(fin){
-        fin >> p;
-        points.push_back(p);
-    }
-}
-
-void write_points(vector<Point> &points){
-    ofstream out(INFILE);
-    for(const Point &p: points)
-        out << p << endl;
-    out.close();
-    N = 10;
-}
-
 void write_ppm(Color **colors){
     ofstream out(OUTFILE);
     out << "P3" << endl << X << " " << Y << endl << 255 << endl;
@@ -236,13 +224,36 @@ void write_ppm(Color **colors){
     out.close();
 }
 
+vector<Point>* input(){
+    string in;
+    do{
+        cout << "Generate Points? yes/no ";
+        cin >> in;
+    }while(in != "yes" && in != "no");
+
+    vector<Point> *points = new vector<Point>();
+    if(in == "yes"){
+        for(int i=0;i<10;i++)
+            points->push_back(Point());
+        return points; 
+    }else{
+        ifstream fin(INFILE);
+        double x,y;
+        while(fin >> x >> y)
+            points->push_back(Point(x,y));
+        fin.close();
+        return points;
+    }
+}
+
 void draw_diagram(Color **colors, KDNode<Point> *tree){
     if(tree == NULL)
         return;
     
     Point p = Point(tree->get_value(), X, Y);
-    int lower = (int)tree->get_lower() * X;
-    int upper = (int)tree->get_upper() * X;
+    int lower = tree->get_lower() * X;
+    int upper = tree->get_upper() * X;
+    cout << lower << " " << upper << endl;
     if(tree->get_dim() == 0){
         draw_circle(colors, p, 2.0, RED);
         draw_line(colors, Point(p.x, lower), Point(p.x, upper), RED);
@@ -256,42 +267,25 @@ void draw_diagram(Color **colors, KDNode<Point> *tree){
 }
 
 void part3(){
-    string in;
-    do{
-        cout << "Generate Points? yes/no ";
-        cin >> in;
-    }while(in != "yes" && in != "no");
-   
-    vector<Point> points(10);
-    if(in == "yes")
-        write_points(points);
-    else if(in == "no")
-        read_file(points);
+    vector<Point> *points = input();
     
-    KDNode<Point> *tree = NULL;
-    for(const Point &p: points)
-        tree = KDNode<Point>::insert(tree, p);
-    cout << "created tree" << endl;
-    
-    cout << tree->get_dim() << ": " << tree->get_lower() << " " << tree->get_upper() << endl;
-    tree = tree->get_right();
-    cout << tree->get_dim() << ": " << tree->get_lower() << " " << tree->get_upper() << endl;
-    
-    
-//     Color** colors = new Color*[X];
-//     for(int i=0;i<X;i++){
-//         colors[i] = new Color[Y];
-//     }
-//     cout << "initialized colors" << endl;
-//     draw_diagram(colors, tree);
-//     cout << "created diagram" << endl;
-//     write_ppm(colors);
-//     cout << "wrote ppm" << endl;
+    KDNode<Point> *tree = NULL; 
+    for(size_t i=0;i<points->size();i++){
+        tree = KDNode<Point>::insert(tree, points->at(i));
+    }
+
+    Color** colors = new Color*[X];
+    for(int i=0;i<X;i++){
+        colors[i] = new Color[Y];
+    }
+    draw_diagram(colors, tree);
+    write_ppm(colors);
         
-//     for(int i=0;i<X;i++)
-//         delete[] colors[i];
-//     delete[] colors;
+    for(int i=0;i<X;i++)
+        delete[] colors[i];
+    delete[] colors;
     delete tree;
+    delete points;
     
 
 }
