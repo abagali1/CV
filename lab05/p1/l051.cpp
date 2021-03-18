@@ -70,7 +70,7 @@ vector<int>* read_file(){
 
 void write_result(vector<int> *colors){
     FILE* fout = fopen(MOUTFILE, "w");
-    fprintf(fout, "P3\n%d %d\n255\n", X, Y);
+    fprintf(fout, "P3\n%d %d\n1\n", X, Y);
     for(int i=0;i<N;i++)
         fprintf(fout, "%d %d %d\n", colors->at(i), colors->at(i), colors->at(i));
     fclose(fout);
@@ -98,7 +98,7 @@ void sobel_threshold(vector<int> &grayscale){
                 grayscale[i-1]  , grayscale[i]  , grayscale[i+1]  ,
                 grayscale[i+X-1], grayscale[i+X], grayscale[i+X+1],
             };
-            gradient->at(i) = sqrt(pow(dot(grad, SX), 2) + pow(dot(grad, SY), 2)) > T ? 255 : 0;
+            gradient->at(i) = (int)(sqrt(pow(dot(grad, SX), 2) + pow(dot(grad, SY), 2)) > T);
         }
     }
     write_result(gradient);
