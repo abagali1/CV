@@ -107,7 +107,6 @@ class KDNode{
             }
 
             Bounds lb, rb;
-
             lb[!i] = b[!i];
             rb[!i] = b[!i];
             lb[i] = {b[i][0], root->get_value()[i]};
@@ -132,7 +131,6 @@ class KDNode{
         }
 };
 
-int N = 0;
 const Color WHITE(255,255,255);
 const Color BLACK(0,0,0);
 const Color RED(255, 0, 0);
@@ -297,7 +295,6 @@ void part3(){
     
 
 }
-
 
 int main(int argv, char* argc[]){
     srand(time(0));
