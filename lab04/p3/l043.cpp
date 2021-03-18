@@ -65,22 +65,19 @@ class Color{
         }
 };
 
+typedef array<array<double, 2>, 2> Bounds;
+const Bounds B0 = {{{0, 1}, {0, 1}}};
+
 template<typename T>
 class KDNode{
     private:
         KDNode *_l, *_r;
         T _value;
-        double lower, upper;
         int dim;
     public:
-        KDNode(T val): _l(NULL), _r(NULL), _value(val), lower(-1), upper(-1), dim(-1) {};
+        Bounds bounds;
 
-        KDNode(T val, double l, double u, int d)
-            : _l(NULL), _r(NULL),
-              _value(val),
-              lower(l), upper(u),
-              dim(d)
-        {}
+        KDNode(T val, int i): _l(NULL), _r(NULL), _value(val), dim(i) {};
 
         ~KDNode(){
             delete this->_l;
@@ -88,36 +85,42 @@ class KDNode{
         }
         KDNode<T>* get_left(){ return this->_l; }
         KDNode<T>* get_right(){ return this->_r; }
-        double get_lower(){ return this->lower; }
-        double get_upper(){ return this->upper; }
         T get_value(){ return this->_value; }
         int get_dim(){ return this->dim; };
         
         void set_left(KDNode<T> *n){ this->_l = n; }
         void set_right(KDNode<T> *n){ this->_r = n; }
         void set_value(T val){this->_value = val; }
-        void set_upper(double u){ this->upper = u; }
-        void set_lower(double l){ this ->lower = l; }
         void set_dim(int i){ this->dim = i; }
     
         const bool leaf() const {
             return this->_l == NULL && this->_r == NULL;
         }
     
-        static KDNode<T>* insert(KDNode<T> *root, T value, int d = 0, double l = 0, double u = 1){
+        static KDNode<T>* insert(KDNode<T> *root, T value, vector<KDNode<T>*> &nodelist, int d = 0, Bounds b = B0){
             int i = d % KD;
             if(root == NULL){
-                return new KDNode<T>(value, l, u, i);
+                KDNode<T> *tmp = new KDNode<T>(value, i);
+                tmp->bounds = b;
+                nodelist.push_back(tmp);
+                return tmp;
             }
+
+            Bounds lb, rb;
+
+            lb[!i] = b[!i];
+            rb[!i] = b[!i];
+            lb[i] = {b[i][0], root->get_value()[i]};
+            rb[i] = {root->get_value()[i], b[i][1]};
 
             double comp = root->get_value()[i];
             
             if(value[i] < comp){
                 cout << "l" << endl;
-                root->set_left(KDNode<T>::insert(root->get_left(), value, d+1, l, comp));
+                root->set_left(KDNode<T>::insert(root->get_left(), value, nodelist, d+1, lb));
             }else{
                 cout << "r" << endl;
-                root->set_right(KDNode<T>::insert(root->get_right(), value, d+1, comp, u));
+                root->set_right(KDNode<T>::insert(root->get_right(), value, nodelist, d+1, rb));
             }
             return root;
         }
@@ -246,39 +249,39 @@ vector<Point>* input(){
     }
 }
 
-void draw_diagram(Color **colors, KDNode<Point> *tree){
-    if(tree == NULL)
-        return;
-    
-    Point p = Point(tree->get_value(), X, Y);
-    int lower = tree->get_lower() * X;
-    int upper = tree->get_upper() * X;
-    cout << lower << " " << upper << endl;
-    if(tree->get_dim() == 0){
-        draw_circle(colors, p, 2.0, RED);
-        draw_line(colors, Point(p.x, lower), Point(p.x, upper), RED);
-    }else{
-        draw_circle(colors, p, 2.0, BLUE);
-        draw_line(colors, Point(lower, p.y), Point(upper, p.y), BLUE);
+void draw_diagram(Color **colors, vector<KDNode<Point>*> &nodelist){
+    for(auto tree: nodelist){
+        int d = tree->get_dim();
+        Bounds b = tree->bounds;
+        Point p = Point(tree->get_value(), X, Y);
+        double lower = b[!d][0] * X;
+        double upper = b[!d][1] * X;
+
+
+        if(tree->get_dim() == 0){
+            draw_circle(colors, p, 2.0, RED);
+            draw_line(colors, Point(p.x, lower), Point(p.x, upper), RED);
+        }else{
+            draw_circle(colors, p, 2.0, BLUE);
+            draw_line(colors, Point(lower, p.y), Point(upper, p.y), BLUE);
+        }
     }
-    
-    draw_diagram(colors, tree->get_left());
-    draw_diagram(colors, tree->get_right());
 }
 
 void part3(){
     vector<Point> *points = input();
+    vector<KDNode<Point>*> nodelist;
     
-    KDNode<Point> *tree = NULL; 
+    KDNode<Point> *tree = NULL;
     for(size_t i=0;i<points->size();i++){
-        tree = KDNode<Point>::insert(tree, points->at(i));
+        tree = KDNode<Point>::insert(tree, points->at(i), nodelist);
     }
 
     Color** colors = new Color*[X];
     for(int i=0;i<X;i++){
         colors[i] = new Color[Y];
     }
-    draw_diagram(colors, tree);
+    draw_diagram(colors, nodelist);
     write_ppm(colors);
         
     for(int i=0;i<X;i++)
