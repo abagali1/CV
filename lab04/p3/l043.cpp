@@ -116,10 +116,8 @@ class KDNode{
             double comp = root->get_value()[i];
             
             if(value[i] < comp){
-                cout << "l" << endl;
                 root->set_left(KDNode<T>::insert(root->get_left(), value, nodelist, d+1, lb));
             }else{
-                cout << "r" << endl;
                 root->set_right(KDNode<T>::insert(root->get_right(), value, nodelist, d+1, rb));
             }
             return root;
@@ -257,7 +255,6 @@ void draw_diagram(Color **colors, vector<KDNode<Point>*> &nodelist){
         double lower = b[!d][0] * X;
         double upper = b[!d][1] * X;
 
-
         if(tree->get_dim() == 0){
             draw_circle(colors, p, 2.0, RED);
             draw_line(colors, Point(p.x, lower), Point(p.x, upper), RED);
@@ -273,9 +270,8 @@ void part3(){
     vector<KDNode<Point>*> nodelist;
     
     KDNode<Point> *tree = NULL;
-    for(size_t i=0;i<points->size();i++){
-        tree = KDNode<Point>::insert(tree, points->at(i), nodelist);
-    }
+    for(const Point &p: *points)
+        tree = KDNode<Point>::insert(tree, p, nodelist);
 
     Color** colors = new Color*[X];
     for(int i=0;i<X;i++){
