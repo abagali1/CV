@@ -225,6 +225,14 @@ void write_ppm(Color **colors){
     out.close();
 }
 
+void write_points(vector<Point> &points){
+    remove(INFILE);
+    ofstream out(INFILE);
+    for(const Point &p: points)
+        out << p << endl;
+    out.close();
+}
+
 vector<Point>* input(){
     string in;
     do{
@@ -236,12 +244,13 @@ vector<Point>* input(){
     if(in == "yes"){
         for(int i=0;i<10;i++)
             points->push_back(Point());
+        write_points(*points);
         return points; 
     }else{
         ifstream fin(INFILE);
-        double x,y;
-        while(fin >> x >> y)
-            points->push_back(Point(x,y));
+        Point p;
+        while(fin >> p)
+            points->push_back(p);
         fin.close();
         return points;
     }
