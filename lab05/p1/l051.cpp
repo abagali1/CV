@@ -11,7 +11,6 @@
 #define MOUTFILE "imagem.ppm"
 
 #define T 300
-#define E 1
 
 using namespace std;
 
@@ -82,7 +81,7 @@ double dot(const int p[9], const int op[9]){
 
 bool edge(int i){
     return (i < X) || (!(i%X)) || !((i+1)%X) || (i > X*(Y-1));
-}}
+}
 
 void sobel_threshold(vector<int> &grayscale){
     vector<int> *gradient = new vector<int>(N);

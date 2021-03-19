@@ -11,6 +11,8 @@
 #define OUT2 "image2.ppm"
 #define OUTFILE "imagef.ppm"
 
+#define T 300
+
 using namespace std;
 
 int X, Y, N;
@@ -18,31 +20,32 @@ int X, Y, N;
 const int SX[9] = {1, 0, -1, 2, 0, -2, 1, 0, -1};
 const int SY[9] = {1, 2, 1, 0, 0, 0, -1, -2 ,-1};
 
-template<typename C, int N>
-void print_array(C arr[N]){
-    for(int i=0;i<N;i++)
-        cout << arr[i] << ", ";
-    cout << endl;
+static inline bool edge(int i){
+    return (i < X) || (!(i%X)) || !((i+1)%X) || (i > X*(Y-1));
 }
 
-void write_ppm(const string &filename, vector<double> &img){
+static inline int dot(const int p[9], const int op[9]){
+    return p[0]*op[0] + p[1]*op[1] + p[2]*op[2] + p[3]*op[3] + p[4]*op[4] + p[5]*op[5] + p[6]*op[6] + p[7]*op[7] + p[8]*op[8];
+}
+
+void write_ppm(const string &filename, vector<int> &img, int size = 1){
     ofstream out(filename);
-    out << "P3" << endl << X << " " << Y << endl << "1" << endl;
-    for(double d: img)
-        out << (int)round(d) << " " << (int)round(d) << " " << (int)round(d) << " ";
+    out << "P3" << endl << X << " " << Y << endl << size << endl;
+    for(int d: img)
+        out << d << " " << d << " " << d << " ";
     out.close();
 }
 
-void write_ppm(const string &filename, vector<vector<double>> &img){
+void write_ppm(const string &filename, vector<vector<int>> &img, int size = 1){
     ofstream out(filename);
-    out << "P3" << endl << X << " " << Y << endl << "1" << endl;
+    out << "P3" << endl << X << " " << Y << endl << size << endl;
     for(int i=0;i<X;i++)
         for(int j=0;j<Y;j++)
-            out << (int)round(img[j][i]) << " " << (int)round(img[j][i]) << " " << (int)round(img[j][i]) << " ";
+            out << img[j][i] << " " << img[j][i] << " " << img[j][i] << " ";
     out.close();
 }
 
-vector<double>* read_file(const string &filename){
+vector<int>* read_file(const string &filename){
     ifstream fin(filename);
     string format;
     int size; 
@@ -50,8 +53,8 @@ vector<double>* read_file(const string &filename){
     fin >> X >> Y >> size; 
     N = X*Y;
 
-    double p1, p2, p3;
-    vector<double> *grayscale = new vector<double>();
+    int p1, p2, p3;
+    vector<int> *grayscale = new vector<int>();
     for(int i=0;i<N;i++){
         fin >> p1 >> p2 >> p3;
         grayscale->push_back((p1+p2+p3)/3);
@@ -60,12 +63,29 @@ vector<double>* read_file(const string &filename){
     return grayscale;
 }
 
-bool edge(int i){
-    return (i < X) || (!(i%X)) || !((i+1)%X) || (i > X*(Y-1));
+void single_threshole(vector<int> &grayscale){
+    vector<int> *gradient = new vector<int>(N);
+    int gx, gy;
+    for(int i=0;i<N;i++){
+        if(edge(i)){
+            gradient->at(i) = 0;
+        }else{
+            int grad[9] = {
+                grayscale[i-X-1], grayscale[i-X], grayscale[i-X+1],
+                grayscale[i-1]  , grayscale[i]  , grayscale[i+1]  ,
+                grayscale[i+X-1], grayscale[i+X], grayscale[i+X+1],
+            };
+            gx = dot(grad, SX);
+            gy = dot(grad, SY);
+            gradient->at(i) = (int)(sqrt(pow(gx, 2) + pow(gy, 2)) > T);
+        }
+    }
+    delete gradient;
 }
 
 void part2(){
-    vector<double> *grayscale = read_file("image.ppm");
+    vector<int> *grayscale = read_file("image.ppm");
+    single_threshole(*grayscale);
     delete grayscale;
 }
 
