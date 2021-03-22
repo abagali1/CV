@@ -49,8 +49,7 @@ vector<int>* read_file(const string &filename){
     ifstream fin(filename);
     string format;
     int size; 
-    fin >> format;
-    fin >> X >> Y >> size; 
+    fin >> format >> X >> Y >> size;
     N = X*Y;
 
     int p1, p2, p3;
@@ -64,9 +63,9 @@ vector<int>* read_file(const string &filename){
 }
 
 void single_threshole(vector<int> &grayscale){
-    vector<int> *gradient = new vector<int>(N);
+    vector<int> *gradient = new vector<int>(N, 0);
     int gx, gy;
-    for(int i=0;i<N;i++){
+    for(int i=X+1;i<N-X;i++){
         if(edge(i)){
             gradient->at(i) = 0;
         }else{
@@ -80,6 +79,7 @@ void single_threshole(vector<int> &grayscale){
             gradient->at(i) = (int)(sqrt(pow(gx, 2) + pow(gy, 2)) > T);
         }
     }
+    write_ppm("test.ppm", *gradient);
     delete gradient;
 }
 
@@ -92,3 +92,4 @@ void part2(){
 int main(int argc, char *argv[]){
     part2();
 }
+
