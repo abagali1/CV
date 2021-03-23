@@ -25,8 +25,6 @@ const int SY[9] = {1, 2, 1, 0, 0, 0, -1, -2 ,-1};
 
 const int ANGLES[5] = {0, 45, 90, 135, 180};
 
-unordered_set<int> edges;
-
 static inline bool edge(int i){
     return (i < X) || (!(i%X)) || !((i+1)%X) || (i > X*(Y-1));
 }
@@ -68,6 +66,11 @@ void write_ppm(const string &filename, vector<vector<int>> &img, int size = 1){
 
 vector<int>* read_file(const string &filename){
     ifstream fin(filename);
+    if(fin.fail()){
+        cout << "image.ppm not found" << endl;
+        return NULL;
+    }
+
     string format;
     int size; 
     fin >> format >> X >> Y >> size;
@@ -76,8 +79,6 @@ vector<int>* read_file(const string &filename){
     int p1, p2, p3;
     vector<int> *grayscale = new vector<int>();
     for(int i=0;i<N;i++){
-        if(edge(i))
-            edges.insert(i);
         fin >> p1 >> p2 >> p3;
         grayscale->push_back((p1+p2+p3)/3);
     }
@@ -87,31 +88,6 @@ vector<int>* read_file(const string &filename){
 
 vector<int>* nms(vector<int> &gradient, vector<int> &angles){
     vector<int> *n = new vector<int>(N, 0);
-    int n1, n2, t, g;
-    for(int i=X+1;i<N-X;i++){
-        if(edges.find(i) == edges.end()){
-            t = angles[i];
-            g = gradient[i];
-            if(t % 180 == 0){
-                n1 = gradient[i+1];
-                n2 = gradient[i-1];
-            }else if(t == -45 || t == 135){
-                n1 = gradient[i+X+1];
-                n2 = gradient[i-X-1];
-            }else if(t == 45 || t == -135){
-                n1 = gradient[i-X+1];
-                n2 = gradient[i+X-1];
-            }else{
-                if(t == -90 || t == 90){
-                    n1 = gradient[i-X];
-                    n2 = gradient[i+X];
-                }else{
-                    cout << "bad " << i << endl;
-                }
-            }
-        }
-        n->at(i) = (g > n1) && (g > n2);
-    }
     return n;
 }
 
@@ -122,7 +98,7 @@ void gradient(vector<int> &grayscale){
     int gx, gy;
     double mag;
     for(int i=X+1;i<N-X;i++){
-        if(edges.find(i) == edges.end()){
+        if(!edge(i)){
             int grad[9] = {
                 grayscale[i-X-1], grayscale[i-X], grayscale[i-X+1],
                 grayscale[i-1]  , grayscale[i]  , grayscale[i+1]  ,
@@ -137,13 +113,13 @@ void gradient(vector<int> &grayscale){
         }
     }
     vector<int> *suppressed = nms(gradient, angles);
+    write_ppm(NOUT, *suppressed);
     
 }
 
 void part2(){
     vector<int> *grayscale = read_file("image.ppm");
     gradient(*grayscale);
-    
     
     delete grayscale;
 }
