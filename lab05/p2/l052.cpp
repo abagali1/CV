@@ -23,7 +23,9 @@ int X, Y, N;
 const int SX[9] = {1, 0, -1, 2, 0, -2, 1, 0, -1};
 const int SY[9] = {1, 2, 1, 0, 0, 0, -1, -2 ,-1};
 
-const int ANGLES[4] = {0, 45, 135, 180};
+const int ANGLES[5] = {0, 45, 90, 135, 180};
+
+unordered_set<int> edges;
 
 static inline bool edge(int i){
     return (i < X) || (!(i%X)) || !((i+1)%X) || (i > X*(Y-1));
@@ -74,6 +76,8 @@ vector<int>* read_file(const string &filename){
     int p1, p2, p3;
     vector<int> *grayscale = new vector<int>();
     for(int i=0;i<N;i++){
+        if(edge(i))
+            edges.insert(i);
         fin >> p1 >> p2 >> p3;
         grayscale->push_back((p1+p2+p3)/3);
     }
@@ -81,14 +85,44 @@ vector<int>* read_file(const string &filename){
     return grayscale;
 }
 
+vector<int>* nms(vector<int> &gradient, vector<int> &angles){
+    vector<int> *n = new vector<int>(N, 0);
+    int n1, n2, t, g;
+    for(int i=X+1;i<N-X;i++){
+        if(edges.find(i) == edges.end()){
+            t = angles[i];
+            g = gradient[i];
+            if(t % 180 == 0){
+                n1 = gradient[i+1];
+                n2 = gradient[i-1];
+            }else if(t == -45 || t == 135){
+                n1 = gradient[i+X+1];
+                n2 = gradient[i-X-1];
+            }else if(t == 45 || t == -135){
+                n1 = gradient[i-X+1];
+                n2 = gradient[i+X-1];
+            }else{
+                if(t == -90 || t == 90){
+                    n1 = gradient[i-X];
+                    n2 = gradient[i+X];
+                }else{
+                    cout << "bad " << i << endl;
+                }
+            }
+        }
+        n->at(i) = (g > n1) && (g > n2);
+    }
+    return n;
+}
+
 void gradient(vector<int> &grayscale){
-    vector<int> *gradient = new vector<int>(N, 0);
-    vector<int> *angles = new vector<int>(N, 0);
-    vector<int> *hyst = new vector<int>(N);
+    vector<int> gradient(N, 0);
+    vector<int> hyst(N, 0);
+    vector<int> angles(N, 0);
     int gx, gy;
     double mag;
     for(int i=X+1;i<N-X;i++){
-        if(!edge(i)){
+        if(edges.find(i) == edges.end()){
             int grad[9] = {
                 grayscale[i-X-1], grayscale[i-X], grayscale[i-X+1],
                 grayscale[i-1]  , grayscale[i]  , grayscale[i+1]  ,
@@ -97,19 +131,20 @@ void gradient(vector<int> &grayscale){
             gx = dot(grad, SX);
             gy = dot(grad, SY);
             mag = sqrt(pow(gx, 2) + pow(gy, 2));
-            gradient->at(i) = (int)mag;
-            angles->at(i) = closest_angle(atan2(gy, gx) * RD);
-            hyst->at(i) = mag > T2 ? 2 : (mag > T1 ? 1 : 0);
+            gradient[i] = (int)mag;
+            angles[i] = closest_angle(atan2(gy, gx) * RD);
+            hyst[i] = mag > T2 ? 2 : (mag > T1 ? 1 : 0);
         }
     }
-    delete gradient;
-    delete angles;
-    delete hyst;
+    vector<int> *suppressed = nms(gradient, angles);
+    
 }
 
 void part2(){
     vector<int> *grayscale = read_file("image.ppm");
     gradient(*grayscale);
+    
+    
     delete grayscale;
 }
 
