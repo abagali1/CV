@@ -88,6 +88,29 @@ vector<int>* read_file(const string &filename){
 
 vector<int>* nms(vector<int> &gradient, vector<int> &angles){
     vector<int> *n = new vector<int>(N, 0);
+    int g, t, n1, n2;
+    for(int i=0;i<N;i++){
+        if(!edge(i)){
+            g = gradient[i];
+            t = angles[i];
+            if(!(t % 180)){
+                n1 = gradient[i-1];
+                n2 = gradient[i+1];
+            }else if(t == 45 || t == -135){
+                n1 = gradient[i-X+1];
+                n2 = gradient[i+X-1];
+            }else if(t == -45 || t == 135){
+                n1 = gradient[i-X-1];
+                n2 = gradient[i+X+1];
+            }else{
+                n1 = gradient[i-X];
+                n2 = gradient[i+X];
+            }
+            n->at(i) = (int)((g >= n1) && (g >= n2));
+        }else{
+            n->at(i) = 0;
+        }
+    }
     return n;
 }
 
@@ -113,8 +136,11 @@ void gradient(vector<int> &grayscale){
         }
     }
     vector<int> *suppressed = nms(gradient, angles);
+
+
     write_ppm(NOUT, *suppressed);
     
+    delete suppressed;
 }
 
 void part2(){
