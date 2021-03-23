@@ -50,17 +50,24 @@ int closest_angle(const int &theta){
 void write_ppm(const string &filename, vector<int> &img, int size = 1){
     ofstream out(filename);
     out << "P3" << endl << X << " " << Y << endl << size << endl;
-    for(int d: img)
-        out << d << " " << d << " " << d << " ";
+    int p;
+    for(int d: img){
+        p = min(d, size);
+        out << p << " " << p << " " << p << " ";
+    }
     out.close();
 }
 
 void write_ppm(const string &filename, vector<vector<int>> &img, int size = 1){
     ofstream out(filename);
     out << "P3" << endl << X << " " << Y << endl << size << endl;
-    for(int i=0;i<X;i++)
-        for(int j=0;j<Y;j++)
-            out << img[j][i] << " " << img[j][i] << " " << img[j][i] << " ";
+    int p;
+    for(int i=0;i<X;i++){
+        for(int j=0;j<Y;j++){
+            p = min(img[j][i], size);
+            out << p << " " << p << " " << p << " ";
+        }
+    }
     out.close();
 }
 
@@ -114,6 +121,33 @@ vector<int>* nms(vector<int> &gradient, vector<int> &angles){
     return n;
 }
 
+
+void hysteresis(vector<int> &hyst, int i){
+    if(i < 0 || i > N || hyst[i] == 0)
+        return;
+    
+    if(hyst[i] != 3){
+        hyst[i] = 3;
+        for(int j=i-X-1;j<=i+X+1;j++){
+            if(j != i)
+                hysteresis(hyst, j);
+            else
+                return;
+        }
+    }
+}
+
+void combine(vector<int> &suppressed, vector<int> &hyst){
+    ofstream fout(FOUT);
+    fout << "P3" << endl << X << " " << Y << endl << 1 << endl;
+    int p;
+    for(int i=0;i<N;i++){
+        p = (int)(suppressed[i] && hyst[i]);
+        fout << p << " " << p << " " << p << " ";
+    }
+    fout.close();
+}
+
 void gradient(vector<int> &grayscale){
     vector<int> gradient(N, 0);
     vector<int> hyst(N, 0);
@@ -137,9 +171,14 @@ void gradient(vector<int> &grayscale){
     }
     vector<int> *suppressed = nms(gradient, angles);
 
+    for(int i=0;i<N;i++)
+        if(hyst[i] == 2)
+            hysteresis(hyst, i);
 
     write_ppm(NOUT, *suppressed);
-    
+    write_ppm(HOUT, hyst);
+    combine(*suppressed, hyst);
+
     delete suppressed;
 }
 
