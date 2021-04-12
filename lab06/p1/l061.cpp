@@ -14,19 +14,39 @@
 
 #define T1 70
 #define T2 120
+#define CT 0
 
 using namespace std;
 
 class Point {
     public:
-        double x,y;
+        double x, y;
     Point(){
-        x = 0;
-        y = 0;
+        this->x = (double)rand()/(double)RAND_MAX;
+        this->y = (double)rand()/(double)RAND_MAX;
     }
-    Point(double px, double py){
-        x = px; 
-        y = py;
+    Point(double _x, double _y): x(_x), y(_y){};
+    Point(Point p1, double scalar): x(p1.x*scalar), y(p1.y*scalar){};
+    Point(Point p1, double s_x, double s_y): x(p1.x*s_x), y(p1.y*s_y){};
+    inline double distance(Point &p){ return sqrt(pow(this->x-p.x, 2) + pow(this->y-p.y, 2)); }
+    bool operator == (const Point &p) const{
+        return this->x == p.x && this->y == p.y;
+    }
+    bool operator != (const Point &p) const{
+        return this->x != p.x || this->y != p.y;
+    }
+    friend ostream& operator << (ostream &out, const Point& p) {
+        out << fixed << setprecision(17) << p.x << "  " << p.y;
+        return out;
+    }
+    friend istream& operator>>(istream &input, Point &p){
+      input >> p.x >> p.y;
+      return input;
+    }
+    const double& operator[](int i) const{
+        if(i < 0 || i >=2)
+            throw invalid_argument("point range out of bounds");
+        return i == 0 ? this->x : this->y;
     }
 };
 
@@ -91,7 +111,7 @@ vector<int>* read_file(const string &filename){
     return grayscale;
 }
 
-void draw_line(Point p1, Point p2){ // all cases
+void draw_line(vector<vector<int>> &tally, Point p1, Point p2){ // all cases
     int dx = p2.x - p1.x;
     int dy = p2.y - p1.y;
     
@@ -115,6 +135,8 @@ void draw_line(Point p1, Point p2){ // all cases
     int x0 = p1.x; // keep the Point ints intact
     int y0 = p1.y;
     for(int k=0;k<=i;k++){
+        if(x0 < X && x0 >=0 && y0 < Y && y0 >= 0)
+            tally[x0][y0] += 1;
         e += j;
         if(e>i){
             e -= i;
@@ -147,7 +169,7 @@ vector<int>* nms(vector<int> &gradient, vector<int> &angles){
     for(int i=0;i<N;i++){
         if(!edge(i)){
             g = gradient[i];
-            t = closest_angle(angles[i]);
+            t = closest_angle(angles[i] * RD);
             if(!(t % 180)){
                 n1 = gradient[i-1];
                 n2 = gradient[i+1];
@@ -213,7 +235,7 @@ vector<int> detect_edges(vector<int> &grayscale, vector<int> &angles){
             gy = dot(grad, SY);
             mag = sqrt(pow(gx, 2) + pow(gy, 2));
             gradient[i] = (int)mag;
-            angles[i] = atan2(gy, gx) * RD;
+            angles[i] = atan2(gy, gx);
             hyst[i] = mag > T2 ? 2 : (mag > T1 ? 1 : 0);
         }
     }
@@ -232,9 +254,18 @@ vector<int> detect_edges(vector<int> &grayscale, vector<int> &angles){
 
 void centers(vector<int> &edges, vector<int> &angles){
     double m;
-    for(int i=0;i<N;i++){
-        if(edges[i]){
-            m = tan(angles[i]);
+    Point s, e;
+    int k;
+    vector<vector<int>> tally(X, vector<int>(Y, 0));
+    for(int i=0;i<X;i++){
+        for(int j=0;j<Y;j++){
+            k = j*X+i;
+            if(edges[k]){
+                m = tan(angles[k]);
+                s = Point((j/m)+i, 0);
+                e = Point(((-Y+j)/m) + i, Y);
+                draw_line(tally, s, e);
+            }
         }
     }
 }
@@ -245,8 +276,9 @@ void part1(){
     
     vector<int> angles(N, 0);
     vector<int> edges = detect_edges(*grayscale, angles);
-
-
+    cout << "got edges" << endl;
+    centers(edges, angles);
+    cout << "got centers" << endl;
 
     delete grayscale;
 }
