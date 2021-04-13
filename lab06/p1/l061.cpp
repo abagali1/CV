@@ -50,7 +50,27 @@ class Point {
     }
 };
 
+class Color{
+    public:
+        uchar r, g, b;
+        Color(): r(255), g(255), b(255){};
+        Color(uchar _r, uchar _g, uchar _b): r(_r), g(_g), b(_b){};
+        const bool operator==(const Color &c) const{
+            return this->r == c.r && this->g == c.g && this->b == c.b;
+        }
+
+        const bool operator!=(const Color &c) const {
+            return this->r != c.r || this->g != c.g || this->b != c.b;
+        }
+        
+        friend ostream &operator<<(ostream &out, const Color &c){
+            out << (int)c.r << " " << (int)c.g << " " << (int)c.b << " ";
+            return out;
+        }
+};
+
 int X, Y, N;
+int MT = 0;
 
 const int SX[9] = {1, 0, -1, 2, 0, -2, 1, 0, -1};
 const int SY[9] = {1, 2, 1, 0, 0, 0, -1, -2 ,-1};
@@ -89,7 +109,17 @@ void write_ppm(const string &filename, vector<vector<int>> &img, int size = 1){
     out.close();
 }
 
-vector<int>* read_file(const string &filename){
+void write_ppm(const string &filename, vector<Color> &img, int size = 255){
+    ofstream out(filename);
+    out << "P3" << endl << X << " " << Y << endl << size << endl;
+    int p;
+    for(const Color &d: img){
+        out << d;
+    }
+    out.close();
+}
+
+vector<int>* read_file(const string &filename, vector<Color> *orig){
     ifstream fin(filename);
     if(fin.fail()){
         cout << filename << " not found" << endl;
@@ -105,6 +135,7 @@ vector<int>* read_file(const string &filename){
     vector<int> *grayscale = new vector<int>();
     for(int i=0;i<N;i++){
         fin >> p1 >> p2 >> p3;
+        orig->push_back(Color(p1, p2, p3));
         grayscale->push_back((p1+p2+p3)/3);
     }
     fin.close();
@@ -135,8 +166,11 @@ void draw_line(vector<vector<int>> &tally, Point p1, Point p2){ // all cases
     int x0 = p1.x; // keep the Point ints intact
     int y0 = p1.y;
     for(int k=0;k<=i;k++){
-        if(x0 < X && x0 >=0 && y0 < Y && y0 >= 0)
-            tally[x0][y0] += 1;
+        if(x0 < X && x0 >=0 && y0 < Y && y0 >= 0){
+            tally[y0][x0] += 1;
+            if(tally[y0][x0] > MT)
+                MT = tally[y0][x0];
+        }
         e += j;
         if(e>i){
             e -= i;
@@ -163,7 +197,7 @@ int closest_angle(const int &theta){
     return ((theta > 0) - (theta < 0)) * angle;
 }
 
-vector<int>* nms(vector<int> &gradient, vector<int> &angles){
+vector<int>* nms(vector<int> &gradient, vector<double> &angles){
     vector<int> *n = new vector<int>(N, 0);
     int g, t, n1, n2;
     for(int i=0;i<N;i++){
@@ -219,9 +253,18 @@ void combine(vector<int> &suppressed, vector<int> &hyst, vector<int> &edges){
     fout.close();
 }
 
-vector<int> detect_edges(vector<int> &grayscale, vector<int> &angles){
-    vector<int> gradient(N, 0);
+void vote_line(vector<vector<int>> &tally, int idx, double m){
+    int x = idx / X;
+    int y = idx % X;
+    Point s = Point((y/m)+x, 0);
+    Point e = Point(((-Y+y)/m) + x, Y);
+    draw_line(tally, s, e);
+}
+
+vector<int> detect_edges(vector<int> &grayscale, vector<double> &angles){
     vector<int> hyst(N, 0);
+    vector<vector<int>> tally(Y, vector<int>(X, 0));
+    vector<int> gradient(N, 0);
     int gx, gy;
     double mag;
     for(int i=X+1;i<N-X;i++){
@@ -236,6 +279,7 @@ vector<int> detect_edges(vector<int> &grayscale, vector<int> &angles){
             mag = sqrt(pow(gx, 2) + pow(gy, 2));
             gradient[i] = (int)mag;
             angles[i] = atan2(gy, gx);
+            // vote_line(tally, i, tan(angles[i]));
             hyst[i] = mag > T2 ? 2 : (mag > T1 ? 1 : 0);
         }
     }
@@ -252,34 +296,14 @@ vector<int> detect_edges(vector<int> &grayscale, vector<int> &angles){
     return edges;
 }
 
-void centers(vector<int> &edges, vector<int> &angles){
-    double m;
-    Point s, e;
-    int k;
-    vector<vector<int>> tally(X, vector<int>(Y, 0));
-    for(int i=0;i<X;i++){
-        for(int j=0;j<Y;j++){
-            k = j*X+i;
-            if(edges[k]){
-                m = tan(angles[k]);
-                s = Point((j/m)+i, 0);
-                e = Point(((-Y+j)/m) + i, Y);
-                draw_line(tally, s, e);
-            }
-        }
-    }
-}
-
-
 void part1(){
-    vector<int> *grayscale = read_file(INFILE);
-    
-    vector<int> angles(N, 0);
-    vector<int> edges = detect_edges(*grayscale, angles);
-    cout << "got edges" << endl;
-    centers(edges, angles);
-    cout << "got centers" << endl;
+    vector<double> angles(N, 0);
+    vector<Color> *orig = new vector<Color>();
+    vector<int> *grayscale = read_file(INFILE, orig);
 
+    vector<int> edges = detect_edges(*grayscale, angles);
+
+    delete orig;
     delete grayscale;
 }
 
