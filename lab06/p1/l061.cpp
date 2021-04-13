@@ -297,10 +297,10 @@ vector<int> detect_edges(vector<int> &grayscale, vector<double> &angles){
 }
 
 void part1(){
-    vector<double> angles(N, 0);
     vector<Color> *orig = new vector<Color>();
     vector<int> *grayscale = read_file(INFILE, orig);
 
+    vector<double> angles(N, 0);
     vector<int> edges = detect_edges(*grayscale, angles);
 
     delete orig;
