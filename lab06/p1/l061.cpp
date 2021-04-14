@@ -100,8 +100,8 @@ void write_ppm(const string &filename, vector<vector<int>> &img, int size = 1){
     ofstream out(filename);
     out << "P3" << endl << X << " " << Y << endl << size << endl;
     int p;
-    for(int i=0;i<X;i++){
-        for(int j=0;j<Y;j++){
+    for(int i=0;i<img[0].size();i++){
+        for(int j=0;j<img.size();j++){
             p = min(img[j][i], size);
             out << p << " " << p << " " << p << " ";
         }
@@ -167,9 +167,9 @@ void draw_line(vector<vector<int>> &tally, Point p1, Point p2){ // all cases
     int y0 = p1.y;
     for(int k=0;k<=i;k++){
         if(x0 < X && x0 >=0 && y0 < Y && y0 >= 0){
-            tally[y0][x0] += 1;
-            if(tally[y0][x0] > MT)
-                MT = tally[y0][x0];
+            tally[x0][y0] += 1;
+            if(tally[x0][y0] > MT)
+                MT = tally[x0][y0];
         }
         e += j;
         if(e>i){
@@ -253,18 +253,24 @@ void combine(vector<int> &suppressed, vector<int> &hyst, vector<int> &edges){
     fout.close();
 }
 
-void vote_line(vector<vector<int>> &tally, int idx, double m){
-    int x = idx / X;
-    int y = idx % X;
-    Point s = Point((y/m)+x, 0);
-    Point e = Point(((-Y+y)/m) + x, Y);
+void vote_line(vector<vector<int>> &tally, int x, int y, double m){
+    Point s;
+    Point e;
+    if(abs(m) < 1e-4){
+        s = Point(0, y);
+        e = Point(X, y);
+    }else{
+        s = Point((y/m)+x, 0);
+        e = Point(((-Y+y)/m)+x, Y);
+    }
     draw_line(tally, s, e);
 }
 
 vector<int> detect_edges(vector<int> &grayscale, vector<double> &angles){
     vector<int> hyst(N, 0);
-    vector<vector<int>> tally(Y, vector<int>(X, 0));
     vector<int> gradient(N, 0);
+    vector<double> slopes(N, 0);
+    vector<vector<int>> tally(X, vector<int>(Y, 0));
     int gx, gy;
     double mag;
     for(int i=X+1;i<N-X;i++){
@@ -279,7 +285,6 @@ vector<int> detect_edges(vector<int> &grayscale, vector<double> &angles){
             mag = sqrt(pow(gx, 2) + pow(gy, 2));
             gradient[i] = (int)mag;
             angles[i] = atan2(gy, gx);
-            // vote_line(tally, i, tan(angles[i]));
             hyst[i] = mag > T2 ? 2 : (mag > T1 ? 1 : 0);
         }
     }
@@ -292,6 +297,17 @@ vector<int> detect_edges(vector<int> &grayscale, vector<double> &angles){
 
     combine(*suppressed, hyst, edges);
     delete suppressed;
+    cout << "got edges" << endl;
+
+    for(int i=0;i<X;i++){
+        for(int j=0;j<Y;j++){
+            int k = j*X+i;
+            if(edges[k])
+                vote_line(tally, i, j, -tan(angles[k]));
+        }
+    }
+
+    write_ppm(VOUT, tally, MT);
 
     return edges;
 }
