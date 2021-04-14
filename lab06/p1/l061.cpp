@@ -14,7 +14,7 @@
 
 #define T1 70
 #define T2 120
-#define CT 0
+#define CT 150
 
 using namespace std;
 
@@ -77,6 +77,8 @@ const int SY[9] = {1, 2, 1, 0, 0, 0, -1, -2 ,-1};
 
 const int ANGLES[5] = {0, 45, 90, 135, 180};
 
+const Color RED(255, 0, 0);
+
 static inline bool edge(int i){
     return (i < X) || (!(i%X)) || !((i+1)%X) || (i > X*(Y-1));
 }
@@ -100,8 +102,8 @@ void write_ppm(const string &filename, vector<vector<int>> &img, int size = 1){
     ofstream out(filename);
     out << "P3" << endl << X << " " << Y << endl << size << endl;
     int p;
-    for(int i=0;i<img[0].size();i++){
-        for(int j=0;j<img.size();j++){
+    for(size_t i=0;i<img[0].size();i++){
+        for(size_t j=0;j<img.size();j++){
             p = min(img[j][i], size);
             out << p << " " << p << " " << p << " ";
         }
@@ -112,7 +114,6 @@ void write_ppm(const string &filename, vector<vector<int>> &img, int size = 1){
 void write_ppm(const string &filename, vector<Color> &img, int size = 255){
     ofstream out(filename);
     out << "P3" << endl << X << " " << Y << endl << size << endl;
-    int p;
     for(const Color &d: img){
         out << d;
     }
@@ -180,6 +181,48 @@ void draw_line(vector<vector<int>> &tally, Point p1, Point p2){ // all cases
             x0 += i2;
             y0 += j2;
         }
+    }
+}
+
+static inline void set_pixel(vector<Color> &c, double x, double y, Color color){
+    if(x >= X || x < 0 || y >= Y || y < 0){
+        return;
+    }
+    assert((y*X+x) < c.size());
+    c[y*X+x] = color;
+}
+
+static inline void set_pixel(vector<Color> &c, Point p, Color color){
+    set_pixel(c, p.x, p.y, color);
+}
+
+void draw_circle(vector<Color> &c, Point center, double r, Color color){
+    set_pixel(c, center, color);
+    int x = 0;
+    int y = r;
+    int xmax = (int) (r * 0.70710678); 
+    int y2 = y * y;
+    int y2_new = y2;
+    int ty = (2 * y) - 1;
+    for (x = 0; x <= xmax; x++) {
+        if ((y2 - y2_new) >= ty) {
+            y2 -= ty;
+            y -= 1;
+            ty -= 2;
+        }
+        set_pixel (c, center.x+x, center.y+y, color);
+        set_pixel (c, center.x+x, center.y-y, color);
+        
+        set_pixel (c, center.x-x, center.y+y, color);
+        set_pixel (c, center.x-x, center.y-y, color);
+        
+        set_pixel (c, center.x+y, center.y+x, color);
+        set_pixel (c, center.x+y, center.y-x, color);
+        
+        set_pixel (c, center.x-y, center.y+x, color);
+        set_pixel (c, center.x-y, center.y-x, color);
+        
+        y2_new -= (2 * x) - 3;
     }
 }
 
@@ -269,8 +312,6 @@ void vote_line(vector<vector<int>> &tally, int x, int y, double m){
 vector<int> detect_edges(vector<int> &grayscale, vector<double> &angles){
     vector<int> hyst(N, 0);
     vector<int> gradient(N, 0);
-    vector<double> slopes(N, 0);
-    vector<vector<int>> tally(X, vector<int>(Y, 0));
     int gx, gy;
     double mag;
     for(int i=X+1;i<N-X;i++){
@@ -297,17 +338,6 @@ vector<int> detect_edges(vector<int> &grayscale, vector<double> &angles){
 
     combine(*suppressed, hyst, edges);
     delete suppressed;
-    cout << "got edges" << endl;
-
-    for(int i=0;i<X;i++){
-        for(int j=0;j<Y;j++){
-            int k = j*X+i;
-            if(edges[k])
-                vote_line(tally, i, j, -tan(angles[k]));
-        }
-    }
-
-    write_ppm(VOUT, tally, MT);
 
     return edges;
 }
@@ -318,6 +348,31 @@ void part1(){
 
     vector<double> angles(N, 0);
     vector<int> edges = detect_edges(*grayscale, angles);
+    
+    vector<vector<int>> tally(X, vector<int>(Y, 0));
+    for(int i=0;i<X;i++){
+        for(int j=0;j<Y;j++){
+            int k = j*X+i;
+            if(edges[k])
+                vote_line(tally, i, j, -tan(angles[k]));
+        }
+    }
+    write_ppm(VOUT, tally, MT);
+
+    int k;
+    for(int i=0;i<X;i++){
+        for(int j=0;j<Y;j++){
+            k = j*X+i;
+            if(tally[i][j] > CT){
+                orig->at(k) = RED;
+                for(int s=0;s<5;s++)
+                    draw_circle(*orig, Point(i, j), s, RED);
+            }
+        }
+    }
+
+    write_ppm(OUTFILE, *orig);
+
 
     delete orig;
     delete grayscale;
