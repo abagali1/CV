@@ -13,8 +13,8 @@
 #define RD 57.2957795131
 
 #define T1 70
-#define T2 120
-#define CT 150
+#define T2 130
+#define CT 100
 
 using namespace std;
 
