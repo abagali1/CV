@@ -1,5 +1,5 @@
 // Anup Bagali
-// 04/11/12
+// 04/11/21
 // Period 7
 #include <bits/stdc++.h>
 
@@ -13,8 +13,8 @@
 #define RD 57.2957795131
 
 #define T1 70
-#define T2 130
-#define CT 100
+#define T2 100
+#define CT 120 
 
 using namespace std;
 
