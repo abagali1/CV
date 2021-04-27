@@ -12,8 +12,8 @@
 
 #define RD 57.2957795131
 
-#define T1 60
-#define T2 90
+#define T1 80
+#define T2 110
 #define CT 40
 
 #define RO 65
@@ -402,23 +402,20 @@ void part2(){
     write_ppm(VOUT, tally, MT);
 
     int k;
+    int p, n, d, q, sd; // penny, nickel, dime, quarter, silver dollar
     unordered_set<int> surrounding;
     for(int i=0;i<X;i++){
         for(int j=0;j<Y;j++){
             k = j*X+i;
             if(tally[i][j] > CT && surrounding.count(k) == 0){
 
-                orig->at(k) = RED;
-                for(int s=0;s<5;s++)
-                    draw_circle(*orig, Point(i, j), s, RED);
-
                 for(int x=-20;x<20;x++)
                     for(int y=-20;y<20;y++)
                         surrounding.insert(k+x+y*X);
                 
-                for(int r=RO;r<RF;r++){
+                for(int r=RF;r>RO;r--){
                     int count = trace_circle(edges, Point(i, j), r);
-                    if(count > 65){
+                    if(count > 75){
                         draw_circle(*orig, Point(i, j), r, GREEN);
                         orig->at(k) = GREEN;
                         for(int s=0;s<5;s++)
