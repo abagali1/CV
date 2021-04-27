@@ -14,7 +14,7 @@
 
 #define T1 70
 #define T2 100
-#define CT 120 
+#define CT 75 
 
 using namespace std;
 
