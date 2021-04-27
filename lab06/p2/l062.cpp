@@ -8,16 +8,16 @@
 #define INFILE "image.ppm"
 #define FOUT "imagef.ppm"
 #define VOUT "imagev.ppm"
-#define OUTFILE "imageCC.ppm"
+#define OUTFILE "coins.ppm"
 
 #define RD 57.2957795131
 
-#define T1 70
-#define T2 100
-#define CT 75
+#define T1 60
+#define T2 90
+#define CT 40
 
-#define RO 10
-#define RF 80
+#define RO 65
+#define RF 100
 
 using namespace std;
 
@@ -81,6 +81,10 @@ const int SY[9] = {1, 2, 1, 0, 0, 0, -1, -2 ,-1};
 const int ANGLES[5] = {0, 45, 90, 135, 180};
 
 const Color RED(255, 0, 0);
+const Color PURPLE(255, 0, 255);
+const Color BLUE(0, 0, 255);
+const Color GREEN(0, 255, 0);
+const Color YELLOW(0, 255, 255);
 
 static inline bool edge(int i){
     return (i < X) || (!(i%X)) || !((i+1)%X) || (i > X*(Y-1));
@@ -398,17 +402,31 @@ void part2(){
     write_ppm(VOUT, tally, MT);
 
     int k;
-    int radii[RF-RO];
+    unordered_set<int> surrounding;
     for(int i=0;i<X;i++){
         for(int j=0;j<Y;j++){
             k = j*X+i;
-            if(tally[i][j] > CT){
-                for(int x=RO;x<RF;x++)
-                    radii[x] = trace_circle(edges, Point(i, j), x);
-                
+            if(tally[i][j] > CT && surrounding.count(k) == 0){
+
                 orig->at(k) = RED;
                 for(int s=0;s<5;s++)
                     draw_circle(*orig, Point(i, j), s, RED);
+
+                for(int x=-20;x<20;x++)
+                    for(int y=-20;y<20;y++)
+                        surrounding.insert(k+x+y*X);
+                
+                for(int r=RO;r<RF;r++){
+                    int count = trace_circle(edges, Point(i, j), r);
+                    if(count > 65){
+                        draw_circle(*orig, Point(i, j), r, GREEN);
+                        orig->at(k) = GREEN;
+                        for(int s=0;s<5;s++)
+                            draw_circle(*orig, Point(i, j), s, GREEN);
+                        break;
+                    }
+                }
+
             }
         }
     }
