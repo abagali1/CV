@@ -407,7 +407,11 @@ void part2(){
     write_ppm(VOUT, tally, MAX_T);
 
     int k;
-    int p, n, d, q, sd; // penny, nickel, dime, quarter, silver dollar
+    int p = 0;
+    int n = 0;
+    int d = 0;
+    int q = 0;
+    int sd = 0;
     // penny - <93 + low avg rgb
     // nickel - 95-98
     // dime - <93 + high avg rgb
@@ -479,7 +483,7 @@ void part2(){
     cout << q << " quarters" << endl;
     cout << sd << " silver dollars" << endl;
     cout << "Total sum: $" << dollars << "." << cents << endl;
-    
+
     ofstream fout("results.txt");
     fout << p << " pennies" << endl;
     fout << d << " dimes" << endl;
