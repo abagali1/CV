@@ -14,10 +14,11 @@
 
 #define T1 80
 #define T2 110
-#define CT 40
+#define CT 25
+#define RT 65
 
-#define RO 65
-#define RF 100
+#define RO 80
+#define RF 135
 
 using namespace std;
 
@@ -73,7 +74,7 @@ class Color{
 };
 
 int X, Y, N;
-int MT = 0;
+int MAX_T = -1;
 
 const int SX[9] = {1, 0, -1, 2, 0, -2, 1, 0, -1};
 const int SY[9] = {1, 2, 1, 0, 0, 0, -1, -2 ,-1};
@@ -84,7 +85,7 @@ const Color RED(255, 0, 0);
 const Color PURPLE(255, 0, 255);
 const Color BLUE(0, 0, 255);
 const Color GREEN(0, 255, 0);
-const Color YELLOW(0, 255, 255);
+const Color YELLOW(255, 255, 0);
 
 static inline bool edge(int i){
     return (i < X) || (!(i%X)) || !((i+1)%X) || (i > X*(Y-1));
@@ -176,8 +177,8 @@ void draw_line(vector<vector<int>> &tally, Point p1, Point p2){ // all cases
     for(int k=0;k<=i;k++){
         if(x0 < X && x0 >=0 && y0 < Y && y0 >= 0){
             tally[x0][y0] += 1;
-            if(tally[x0][y0] > MT)
-                MT = tally[x0][y0];
+            if(tally[x0][y0] > MAX_T)
+                MAX_T = tally[x0][y0];
         }
         e += j;
         if(e>i){
@@ -384,6 +385,10 @@ vector<int> detect_edges(vector<int> &grayscale, vector<double> &angles){
     return edges;
 }
 
+static inline int get_votes(vector<vector<int>> &tally, int x, int y){
+    return (x >= X || x < 0 || y >= Y || y < 0) ? 0 : tally[x][y];
+}
+
 void part2(){
     vector<Color> *orig = new vector<Color>();
     vector<int> *grayscale = read_file(INFILE, orig);
@@ -399,10 +404,15 @@ void part2(){
                 vote_line(tally, i, j, -tan(angles[k]));
         }
     }
-    write_ppm(VOUT, tally, MT);
+    write_ppm(VOUT, tally, MAX_T);
 
     int k;
     int p, n, d, q, sd; // penny, nickel, dime, quarter, silver dollar
+    // penny - <93 + low avg rgb
+    // nickel - 95-98
+    // dime - <93 + high avg rgb
+    // quarter - 
+    // sd - 
     unordered_set<int> surrounding;
     for(int i=0;i<X;i++){
         for(int j=0;j<Y;j++){
@@ -412,14 +422,45 @@ void part2(){
                 for(int x=-20;x<20;x++)
                     for(int y=-20;y<20;y++)
                         surrounding.insert(k+x+y*X);
-                
+
                 for(int r=RF;r>RO;r--){
                     int count = trace_circle(edges, Point(i, j), r);
-                    if(count > 75){
-                        draw_circle(*orig, Point(i, j), r, GREEN);
-                        orig->at(k) = GREEN;
+                    if(count > RT){
+                        for(int x=-r-10;x<r+10;x++)
+                            for(int y=-r-10;y<r+10;y++)
+                                if(get_votes(tally, x, y) < tally[i][j])
+                                    surrounding.insert(k+x+y*X);
+
+
+                        Color c;
+                        if(r<=93){
+                        if(grayscale->at(i) < 130){
+                                p++;
+                                c = RED;
+                            }else{
+                                d++;
+                                c = BLUE;
+                            }
+
+                        }else if(r >= 95 && r <= 98){
+                            if(grayscale->at(i) < 130){
+                                p++;
+                                c = RED;
+                            }else{
+                                n++;
+                                c = PURPLE;
+                            }
+                        }else if(r >= 100 && r <= 125){
+                            q++;
+                            c = GREEN;
+                        }else{
+                            sd++;
+                            c = YELLOW;
+                        }
+
+                        draw_circle(*orig, Point(i, j), r, c);
                         for(int s=0;s<5;s++)
-                            draw_circle(*orig, Point(i, j), s, GREEN);
+                            draw_circle(*orig, Point(i, j), s, c);
                         break;
                     }
                 }
@@ -429,8 +470,25 @@ void part2(){
     }
 
     write_ppm(OUTFILE, *orig);
-
-
+    int total = p + 10*d + 5*n + 25*q + 100*sd;
+    int dollars = total / 100;
+    int cents = total % 100;
+    cout << p << " pennies" << endl;
+    cout << d << " dimes" << endl;
+    cout << n << " nickels" << endl;
+    cout << q << " quarters" << endl;
+    cout << sd << " silver dollars" << endl;
+    cout << "Total sum: $" << dollars << "." << cents << endl;
+    
+    ofstream fout("results.txt");
+    fout << p << " pennies" << endl;
+    fout << d << " dimes" << endl;
+    fout << n << " nickels" << endl;
+    fout << q << " quarters" << endl;
+    fout << sd << " silver dollars" << endl;
+    fout << "Total sum: $" << dollars << "." << cents << endl;
+    fout.close();
+    
     delete orig;
     delete grayscale;
 }
