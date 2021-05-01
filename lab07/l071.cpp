@@ -7,48 +7,41 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #define INFILE "image.jpg"
-#define LT 80 
-#define HT 120
+#define HT 100
 
 using namespace std;
 using namespace cv;
 
+const Scalar RED(0, 0, 255);
+const Scalar BLUE(255, 0, 0);
+const Scalar GREEN(0, 255, 0);
+const Scalar PURPLE(255, 0, 255);
+const Scalar YELLOW(0, 255, 255);
+
 
 int main(int argc, char** argv )
 {
-    Mat src, grayscale, edges, cdst;
+    Mat src, grayscale, edges;
     src = imread(INFILE, IMREAD_COLOR);
     cvtColor(src, grayscale, COLOR_BGR2GRAY);
-    int X = src.cols, Y = src.rows;
     
     blur(grayscale, edges, Size(3,3));
-    Canny(edges, edges, LT, HT, 3);
+    Canny(edges, edges, 70, HT, 3);
 
-    cvtColor(edges, cdst, COLOR_GRAY2BGR);
-
-    vector<Vec2f> lines;
-    HoughLines(edges, lines, 1, CV_PI/180, 50, 0 ,0);
-
-    float rho, theta;
-    Point p1, p2;
-    double a, b, x0, y0;
-    for(size_t i=0;i<lines.size();i++){
-        rho = lines[i][0];
-        theta = lines[i][1];
-        a = cos(theta);
-        b = sin(theta);
-        x0 = a*rho;
-        y0 = a*rho;
-        p1.x = cvRound(x0 + X*(-b));
-        p1.y = cvRound(y0 + Y*(a));
-        p2.x = cvRound(x0 - X*(-b));
-        p2.y = cvRound(y0 - Y*(a));
-        line(cdst, p1, p2, Scalar(0, 0, 255), 3, LINE_AA);
+    int radius;
+    vector<Vec3f> circles;
+    HoughCircles(edges, circles, HOUGH_GRADIENT, 1, 165, 1, 30, 1, 165); // src, dest, --, scale, minDist, Canny Thres, Votes, minRad, maxRad
+    for(size_t i=0;i<circles.size();i++){
+        Vec3i c = circles[i];
+        Point center = Point(c[0], c[1]);
+        circle(src, center, 1, Scalar(0,255,0), 3, LINE_AA);
+        radius = c[2];
+        circle(src, center, radius, Scalar(255,0,0), 3, LINE_AA);
     }
 
-    imwrite("./gray.png", grayscale);
+
     imwrite("./edges.png", edges);
-    imwrite("./lines.png", cdst);
+    imwrite("./imagec.png", src);
 
     waitKey();
     
