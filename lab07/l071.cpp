@@ -21,16 +21,17 @@ const Scalar YELLOW(0, 255, 255);
 
 int main(int argc, char** argv )
 {
-    Mat src, grayscale, edges;
-    src = imread(INFILE, IMREAD_COLOR);
+    Mat img, src, grayscale, blurred, edges;
+    img = imread(INFILE, IMREAD_COLOR);
+    resize(img, src, Size(), .5, .5, INTER_NEAREST);
     cvtColor(src, grayscale, COLOR_BGR2GRAY);
     
-    blur(grayscale, edges, Size(3,3));
-    Canny(edges, edges, 70, HT, 3);
+    blur(grayscale, blurred, Size(3,3));
+    Canny(blurred, edges, 50, HT, 3);
 
     int radius;
     vector<Vec3f> circles;
-    HoughCircles(edges, circles, HOUGH_GRADIENT, 1, 165, 1, 30, 1, 165); // src, dest, --, scale, minDist, Canny Thres, Votes, minRad, maxRad
+    HoughCircles(blurred, circles, HOUGH_GRADIENT, 1, blurred.rows/30, HT, 55, 1, blurred.rows/10); // src, dest, --, scale, minDist, Canny Thres, Votes, minRad, maxRad
     for(size_t i=0;i<circles.size();i++){
         Vec3i c = circles[i];
         Point center = Point(c[0], c[1]);
